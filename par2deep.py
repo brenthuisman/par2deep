@@ -4,6 +4,7 @@ from ask_yn import ask_yn
 from tqdm import tqdm
 from collections import Counter as cntr
 
+#TODO keep .1-files if return val is 5.
 #TODO: flag large file only (1MB+?) perhaps also higher default percentage for smaller files?
 
 parser = argparse.ArgumentParser()
