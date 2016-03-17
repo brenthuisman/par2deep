@@ -1,6 +1,6 @@
 *
 !.gitignore
-!readme.md
+!README.md
 !*.py
 !LICENSE
 !*/
