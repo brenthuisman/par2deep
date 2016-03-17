@@ -1,0 +1,6 @@
+*
+!.gitignore
+!readme.md
+!*.py
+!LICENSE
+!*/
