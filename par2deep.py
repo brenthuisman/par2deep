@@ -4,13 +4,13 @@ from ask_yn import ask_yn
 from tqdm import tqdm
 from collections import Counter as cntr
 
-#TODO keep .1-files if return val is 5.
 #TODO: flag large file only (1MB+?) perhaps also higher default percentage for smaller files?
 
 parser = argparse.ArgumentParser()
-parser.add_argument("operation", type=str, choices=["c","v","r","u","i"], help="Set the type of operation: (c)reate (keeps existing par2 files), (u)pdate and create par2 files, (v)erify or auto(r)epair par2 files, (i)nteractive verification and repair.")
+parser.add_argument("operation", type=str, choices=["c","v","r","u"], help="Set the type of operation: (c)reate (keeps existing par2 files), (u)pdate and create par2 files, (v)erify or auto(r)epair par2 files, (i)nteractive verification and repair.")
+parser.add_argument("-q", "--quiet", action='store_true', help="Don't offer to repair when verification fails.")
 parser.add_argument("-dr", "--directory", type=str, default=os.getcwd(), help="Path to operate on (default is current directory).")
-parser.add_argument("-sr", "--skip_root", action='store_true', help="Skip files in the root of the specified directory (default off).")
+parser.add_argument("-ir", "--include_root", action='store_true', help="Include files in the root of the specified directory (default off).")
 parser.add_argument("-ko", "--keep_old", action='store_true', help="Keep old files when par2 finds and corrects errors.")
 parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
 parser.add_argument("-cmd", "--par_cmd", type=str, default="par2", help="Set path to alternative par2 command (default \"par2\").")
@@ -20,15 +20,17 @@ nf = str(1) #number of parity files
 pc = str(args.percentage)
 dr = os.path.abspath(args.directory)
 ko = args.keep_old
-sr = args.skip_root
+ir = args.include_root
+q = args.quiet
 par_cmd = args.par_cmd
 
 def cmd_exists(cmd):
     return subprocess.check_call("type " + cmd, shell=True) == 0
 
-if cmd_exists(par_cmd) is False:
-	sys.stderr.write(par_cmd+" not in path, aborting...")
-	sys.exit(1)
+if not cmd_exists(par_cmd):
+	if not cmd_exists(os.path.join(sys.path[0],"par2.exe")):
+		sys.stderr.write(par_cmd+" not in path, aborting...")
+		sys.exit(1)
 
 print "Looking for files in",dr,"..."
 
@@ -36,7 +38,7 @@ filel = glob.glob(os.path.join(dr,"**","*"))
 filel = [f for f in filel if not f.endswith(".par2")]
 filel = [f for f in filel if not f.endswith(".1") and not f.endswith(".2")] #remove copies with errors fixed previously by par.
 filel = [f for f in filel if os.path.isfile(f)] #not sure why required, but glob may introduce paths...
-if sr:
+if not ir:
 	filel = [f for f in filel if os.path.dirname(f) != dr]
 
 errors=[]
@@ -59,8 +61,10 @@ devnull = open(os.devnull, 'wb')
 def runpar(command):
 	try:
 		subprocess.check_call(command,shell=False,stdout=devnull,stderr=devnull)
+		return 0
 	except subprocess.CalledProcessError as e:
 		errors.append(( command[-1],errorcodes[e.returncode] ))
+		return e.returncode
 
 if args.operation is "c":
 	print "Creating par2 files in",dr
@@ -81,20 +85,12 @@ if args.operation is "v":
 			errors.append((f,"no .par2 found"))
 			continue
 		runpar([par_cmd,"v",f])
-
-if args.operation is "i":
-	print "Verifying and repairing files in",dr
-	for f in tqdm(filel):
-		if not os.path.isfile(f+".par2"):
-			errors.append((f,"no .par2 found"))
-			continue
-		runpar([par_cmd,"v",f])
-	if len(errors)>0:
+	if len(errors)>0 and not q:
 		print "There were",len(errors),"errors."
 		if ask_yn("Would you like to fix them?"):
 			for f,retcode in tqdm(errors):
-				runpar([par_cmd,"r",f])
-				if not ko and os.path.isfile(f+".1"):
+				retval = runpar([par_cmd,"r",f])
+				if retval == 0 and not ko and os.path.isfile(f+".1"):
 					os.remove(f+".1")
 					succes.append((f,"Succesfully repaired"))
 
@@ -104,8 +100,8 @@ if args.operation is "r":
 		if not os.path.isfile(f+".par2"):
 			errors.append((f,"no .par2 found"))
 			continue
-		runpar([par_cmd,"r",f])
-		if not ko and os.path.isfile(f+".1"):
+		retval = runpar([par_cmd,"r",f])
+		if retval == 0 and not ko and os.path.isfile(f+".1"):
 			os.remove(f+".1")
 			succes.append((f,"Succesfully repaired"))
 
