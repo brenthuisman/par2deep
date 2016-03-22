@@ -31,6 +31,6 @@ After installation, run with `par2deep`. Command line options may be enumerated 
 
 ### Changelog
 
-2016-03-22: Finish port to Python 3, added setup.py.
-2016-03-19: Added quiet mode, keep backup files upon unsuccesful repair.
-2016-03-17: First release
+ * 2016-03-22: Finish port to Python 3, added setup.py.
+ * 2016-03-19: Added quiet mode, keep backup files upon unsuccesful repair.
+ * 2016-03-17: First release
