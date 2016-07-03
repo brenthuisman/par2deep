@@ -1,5 +1,5 @@
 import sys,os,argparse,subprocess,glob2 as glob
-from ask_yn import ask_yn
+from .ask_yn import ask_yn
 from tqdm import tqdm
 from collections import Counter as cntr
 
@@ -24,13 +24,13 @@ def main():
 	q = args.quiet
 	par_cmd = args.par_cmd
 
-	def cmd_exists(cmd):
-	    return subprocess.check_call("type " + cmd, shell=True) == 0
+	# def cmd_exists(cmd):
+	#     return subprocess.check_call(["type","-P",cmd], shell=True) == 0
 
-	if not cmd_exists(par_cmd):
-		if not cmd_exists(os.path.join(sys.path[0],"par2.exe")):
-			sys.stderr.write(par_cmd+" not in path, aborting...")
-			sys.exit(1)
+	# if not cmd_exists(par_cmd):
+	# 	if not cmd_exists(os.path.join(sys.path[0],"par2.exe")):
+	# 		sys.stderr.write(par_cmd+" not in path, exiting...")
+	# 		sys.exit(1)
 
 	print("Looking for files in",dr,"...")
 
@@ -66,11 +66,24 @@ def main():
 			errors.append(( command[-1],errorcodes[e.returncode] ))
 			return e.returncode
 
+	def disp20(lst):
+		if len(lst)<20:
+			for f in lst:
+				print(f)
+		else:
+			if ask_yn("Display filenames?"):
+				for f in lst:
+					print(f)		
+
 	if args.operation is "c":
+		newf=[]
 		print("Creating par2 files in",dr)
 		for f in tqdm(filel):
 			if not os.path.isfile(f+".par2"):
 				runpar([par_cmd,"c","-r"+pc,"-n"+nf,f])
+				newf.append(f)
+		print("There were",len(newf),"new par files created.")
+		disp20(newf)
 
 	if args.operation is "u":
 		print("Updating and creating par2 files in",dr)
@@ -87,11 +100,13 @@ def main():
 			runpar([par_cmd,"v",f])
 		if len(errors)>0 and not q:
 			print("There were",len(errors),"errors.")
+			disp20(errors)
 			if ask_yn("Would you like to fix them?"):
 				for f,retcode in tqdm(errors):
 					retval = runpar([par_cmd,"r",f])
-					if retval == 0 and not ko and os.path.isfile(f+".1"):
-						os.remove(f+".1")
+					if retval == 0:
+						if not ko and os.path.isfile(f+".1"):
+							os.remove(f+".1")
 						succes.append((f,"Succesfully repaired"))
 
 	if args.operation is "r":
@@ -101,8 +116,9 @@ def main():
 				errors.append((f,"no .par2 found"))
 				continue
 			retval = runpar([par_cmd,"r",f])
-			if retval == 0 and not ko and os.path.isfile(f+".1"):
-				os.remove(f+".1")
+			if retval == 0:
+				if not ko and os.path.isfile(f+".1"):
+					os.remove(f+".1")
 				succes.append((f,"Succesfully repaired"))
 
 	print("Finished.")
