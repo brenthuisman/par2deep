@@ -211,7 +211,13 @@ def main():
 
 	## Final Report
 	print("Finished.")
-	print("There were",len(all_err),"errors,",len(repairedfiles),"succesful fixes,",len(removedfiles),"files removed and",len(recreatedfiles),"overwritten new parity files.")
+	print("==========================================================")
+	print("There were:")
+	print(len(createdfiles),"newly created parity files.")
+	print(len(all_err),"errors.")
+	print(len(repairedfiles),"succesful fixes")
+	print(len(removedfiles),"files removed.")
+	print(len(recreatedfiles),"overwritten new parity files.")
 
 	if len(all_err)>0:
 		return 1
