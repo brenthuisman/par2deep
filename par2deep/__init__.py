@@ -211,7 +211,7 @@ def main():
 
 	## Final Report
 	print("Finished.")
-	print("There were",len(all_err),"errors,",len(repairedfiles),"succesful fixes and",len(recreatedfiles),"overwritten new parity files.")
+	print("There were",len(all_err),"errors,",len(repairedfiles),"succesful fixes,",len(removedfiles),"files removed and",len(recreatedfiles),"overwritten new parity files.")
 
 	if len(all_err)>0:
 		return 1
