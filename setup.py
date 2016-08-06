@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from setuptools import setup
 
-VERSION = '3.0'
+VERSION = '3.1'
 
 with open("README.md", "rb") as f:
     long_descr = f.read()

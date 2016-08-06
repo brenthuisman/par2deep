@@ -21,7 +21,7 @@ Or run directly with:
 
 ## Usage
 
-After installation, run with `par2deep`. Command line options may be enumerated by using the --help option.
+After installation, run with `par2deep`. Command line options may be enumerated by using the --help option. Note that `-q` will update, fix or recreate parity files as it sees fit. If unrepairable damage is found, it will recreate parity data.
 
 ## Dependencies
 
@@ -31,6 +31,7 @@ After installation, run with `par2deep`. Command line options may be enumerated 
 
 ### Changelog
 
+ * 2016-08-06: Program no longer maps to `par2` commandline options but to `hashdeep` tools: run it, and see what has changed and needs to be done with respect to the previous run.
  * 2016-03-22: Finish port to Python 3, added setup.py.
  * 2016-03-19: Added quiet mode, keep backup files upon unsuccesful repair.
  * 2016-03-17: First release
