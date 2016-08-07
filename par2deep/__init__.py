@@ -100,14 +100,14 @@ def main():
 
 	create = []
 	print("Checking files without .par2 ...")
-	for f in tqdm(parrables):
+	for f in parrables:
 		if not os.path.isfile(f+".par2") or over:
 			create.append(f)
 
 	verify = []
 	if not novfy and not over:
 		print("Checking files with .par2 ...")
-		for f in tqdm(parrables):
+		for f in parrables:
 			if os.path.isfile(f+".par2"):
 				verify.append(f)
 
@@ -122,6 +122,7 @@ def main():
 				unused.append(f)
 		unused.extend(par2errcopies)
 
+	print("==========================================================")
 	print('Will create',len(create),'new par2 files.')
 	disp10(create)
 	if not novfy:
@@ -195,6 +196,7 @@ def main():
 		removedfiles_err=[ [i,j] for i,j in removedfiles if j !=0 and j != 100 ]
 
 	## Report, ask repair, autorepair if required, or recreation of parfiles
+	print("==========================================================")
 	all_err = createdfiles_err+verifiedfiles_err+verifiedfiles_repairable+removedfiles_err
 
 	for err,count in Counter([j for i,j in all_err]).items():
