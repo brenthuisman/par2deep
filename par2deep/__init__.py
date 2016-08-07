@@ -45,8 +45,6 @@ def main():
 	novfy = args.noverify
 	keep = args.keep_old
 	excludes=args.excludes
-	q = args.quiet
-	excludes=args.excludes
 	dr = os.path.abspath(args.directory)
 	pc = str(args.percentage)
 	par_cmd = args.par_cmd
