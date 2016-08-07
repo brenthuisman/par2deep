@@ -5,7 +5,8 @@ from tqdm import tqdm
 from configargparse import ArgParser
 
 '''
-one mode:
+first, init disk state.
+second, depending on overrides, propose actions and ask user confirmation
 	- create if not exist
 		- file but no .par2
 		- override = create even .par exist
@@ -16,9 +17,6 @@ one mode:
 	- remove unused .par2
 		- no file but .par2
 		- override = dont remove .par2 if no file
-
-first, init disk state.
-second, depending on overrides, propose actions and ask user confirmation
 third, execute user choices.
 fourth, ask to repair if possible/necesary.
 fifth, final report.
@@ -33,6 +31,7 @@ def main():
 	parser.add_argument("-novfy", "--noverify", action='store_true', help="Do not verify existing files (default off).")
 	parser.add_argument("-keep", "--keep_old", action='store_true', help="Keep unused par2 files and old par2 repair files (.1,.2 and so on).")
 	parser.add_argument("-ex", "--excludes", action="append", type=str, default=[], help="Optionally excludes directories ('root' is files in the root of -dir).")
+	parser.add_argument("-exex", "--extexcludes", action="append", type=str, default=[], help="Optionally excludes file extensions.")
 	parser.add_argument("-dir", "--directory", type=str, default=os.getcwd(), help="Path to operate on (default is current directory).")
 	parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
 	parser.add_argument("-pcmd", "--par_cmd", type=str, default="par2", help="Set path to alternative par2 command (default \"par2\").")
@@ -45,6 +44,7 @@ def main():
 	novfy = args.noverify
 	keep = args.keep_old
 	excludes=args.excludes
+	exex=args.extexcludes
 	dr = os.path.abspath(args.directory)
 	pc = str(args.percentage)
 	par_cmd = args.par_cmd
@@ -59,6 +59,8 @@ def main():
 		excludes.remove('root')
 	for excl in excludes:
 		allfiles = [f for f in allfiles if not f.startswith(os.path.join(dr,excl))]
+	for ext in exex:
+		allfiles = [f for f in allfiles if not f.endswith(ext)]
 
 	parrables = [f for f in allfiles if not f.endswith(".par2")]
 
@@ -69,14 +71,6 @@ def main():
 	par2errcopies = [f for f in allfiles if f.endswith(".1") or f.endswith(".2")] #remove copies with errors fixed previously by par.
 
 	## Determine state
-	def disp10(lst):
-		if len(lst)<=10:
-			for f in lst:
-				if isinstance(f, list):
-					print(f[0],':',f[1])
-				else:
-					print(f)
-
 	def displong(lst):
 		x = 0
 		for f in lst:
@@ -88,22 +82,42 @@ def main():
 			if x % 500 == 0:
 				q = input("Press Enter for next 500:")
 
-	create = []
-	print("Checking files without .par2 ...")
-	for f in parrables:
-		if not os.path.isfile(f+".par2") or over:
-			create.append(f)
+	def disp10(lst):
+		if len(lst)<=10 or q: #if quiet, then print all.
+			for f in lst:
+				if isinstance(f, list):
+					print(f[0],':',f[1])
+				else:
+					print(f)
+		elif not q and ask_yn("Display these files?"):
+			displong(lst)
 
+	create = []
 	verify = []
-	if not novfy and not over:
-		print("Checking files with .par2 ...")
-		for f in parrables:
-			if os.path.isfile(f+".par2"):
-				verify.append(f)
+	incomplete = []
+	print("Checking files for parrability ...")
+	for f in parrables:
+		# check if both or one of the par files is missing
+		ispar = os.path.isfile(f+".par2")
+		isvolpar = len(glob.glob(glob.escape(f)+".vol*.par2")) > 0
+		if over:
+			create.append(f)
+		elif not ispar and not isvolpar:
+			#both missing
+			create.append(f)
+		elif not novfy and ispar and isvolpar:
+			#both present
+			verify.append(f)
+		elif novfy and ispar and isvolpar:
+			#both present, but novfy is on, so no action
+			pass
+		else:
+			#one of them is missing but not both
+			incomplete.append(f)
 
 	unused = []
 	if not keep:
-		print("Checking for .par files with missing files ...")
+		print("Checking for unused par2 files ...")
 		for f in par2files:
 			if not os.path.isfile(f[:-5]):
 				unused.append(f)
@@ -115,6 +129,8 @@ def main():
 	print("==========================================================")
 	print('Will create',len(create),'new par2 files.')
 	disp10(create)
+	print('Will replace',len(incomplete),'par2 files because parity data is incomplete (missing file).')
+	disp10(incomplete)
 	if not novfy:
 		print('Will verify',len(verify),'par2 files.')
 		disp10(verify)
@@ -122,14 +138,12 @@ def main():
 		print('Will remove',len(unused),'unused par2 files of which',len(par2errcopies),'old repair files.')
 		disp10(unused)
 
-	all_actions = create + verify + unused
-	if len(create) > 10 or len(verify) >= 10 or len(unused) >= 10:
-		if not q and ask_yn("Display all filenames?"):
-			displong(all_actions)
-
-	if not q and len(all_actions)>0 and not ask_yn("Perform actions?", default=None):
+	all_actions = len(create) + len(incomplete) + len(verify) + len(unused)
+	if not q and all_actions>0 and not ask_yn("Perform actions?", default=None):
 		print('Exiting...')
 		return 0
+
+	create.extend(incomplete)
 
 	## Execute
 	errorcodes = {
@@ -169,7 +183,7 @@ def main():
 	verifiedfiles=[]
 	verifiedfiles_err=[]
 	verifiedfiles_repairable=[]
-	if not novfy and not over:
+	if not novfy and not over and len(verify)>0:
 		print('Verifying ...')
 		for f in tqdm(verify):
 			verifiedfiles.append([ f , runpar([par_cmd,"v",f]) ])
@@ -178,7 +192,7 @@ def main():
 
 	removedfiles=[]
 	removedfiles_err=[]
-	if not keep:
+	if not keep and len(unused)>0:
 		print('Removing ...')
 		for f in tqdm(unused):
 			if os.path.isfile(f): # so os.remove always succeeds and returns None
@@ -196,9 +210,6 @@ def main():
 		if err != 0 and err != 100:
 			print("Error \"",errorcodes[err],"\" occured",count,"times.")
 	disp10([[i,errorcodes[j]] for i,j in all_err])
-	if not q and len(all_err)>10 and ask_yn("Display all files with errors?"):
-		for l in all_err:
-			print(l[0],':',errorcodes[l[1]])
 
 	repairedfiles=[]
 	recreatedfiles=[]
@@ -218,7 +229,6 @@ def main():
 		elif not q and not novfy and ask_yn("Would you like to recreate par files for the changed and unrepairable files?", default=None):
 			for f,retcode in verifiedfiles_repairable+verifiedfiles_err:
 				pars = glob.glob(glob.escape(f)+'*.par2')
-				print(pars)
 				for p in pars:
 					os.remove(p)
 				recreatedfiles.append([ f , runpar([par_cmd,"c","-r"+pc,"-n"+nf,f]) ])
