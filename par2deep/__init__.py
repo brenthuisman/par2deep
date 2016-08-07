@@ -1,7 +1,8 @@
-import sys,os,argparse,subprocess,glob2 as glob,re
+import sys,os,argparse,subprocess,re,configparser
+from collections import Counter
+import glob2 as glob
 from .ask_yn import ask_yn
 from tqdm import tqdm
-from collections import Counter as cntr
 
 '''
 one mode:
@@ -24,6 +25,10 @@ fifth, final report.
 '''
 
 def main():
+	#configfile
+	config = configparser.ConfigParser(allow_no_value=True,delimiters=('='))
+
+	#CMD arguments and configfile
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-q", "--quiet", action='store_true', help="Don't asks questions, go with all defaults, including repairing and deleting files (default off).")
 	parser.add_argument("-over", "--overwrite", action='store_true', help="Overwrite existing par2 files (default off).")
@@ -31,7 +36,6 @@ def main():
 	parser.add_argument("-keep", "--keep_old", action='store_true', help="Keep unused par2 files and old par2 repair files (.1,.2 and so on).")
 	
 	parser.add_argument("-dir", "--directory", type=str, default=os.getcwd(), help="Path to operate on (default is current directory).")
-	parser.add_argument("-incl", "--include_root", action='store_true', help="Include files in the root of the specified directory (default off).")
 	parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
 	parser.add_argument("-pcmd", "--par_cmd", type=str, default="par2", help="Set path to alternative par2 command (default \"par2\").")
 	args = parser.parse_args()
@@ -42,16 +46,29 @@ def main():
 	over = args.overwrite
 	novfy = args.noverify
 	keep = args.keep_old
-	incl = args.include_root
 	q = args.quiet
-	par_cmd = args.par_cmd
+	excludes=[]
+
+	if os.path.isfile(os.path.join(dr,'par2deep.ini')):
+		config.read(os.path.join(dr,'par2deep.ini'))
+	try:
+		par_cmd = list(dict(config['pcmd']).keys())[0]
+	except KeyError:
+		par_cmd = args.par_cmd
+	try:
+		excludes = list(dict(config['exclude']).keys())
+	except KeyError:
+		pass #no excludes
 
 	## Load filesystem
+	print("Using",par_cmd,"...")
 	print("Looking for files in",dr,"...")
 
 	allfiles = [f for f in glob.glob(os.path.join(dr,"**","*")) if os.path.isfile(f)] #not sure why required, but glob may introduce paths...
-	if not incl:
+	if 'root' in excludes:
 		allfiles = [f for f in allfiles if os.path.dirname(f) != dr]
+	for excl in excludes:
+		allfiles = [f for f in allfiles if not f.startswith(os.path.join(dr,excl))]
 
 	parrables = [f for f in allfiles if not f.endswith(".par2")]
 
@@ -170,7 +187,7 @@ def main():
 	## Report, ask repair, autorepair if required, or recreation of parfiles
 	all_err = createdfiles_err+verifiedfiles_err+verifiedfiles_repairable+removedfiles_err
 
-	for err,count in cntr([j for i,j in all_err]).items():
+	for err,count in Counter([j for i,j in all_err]).items():
 		if err != 0 and err != 100:
 			print("Error \"",errorcodes[err],"\" occured",count,"times.")
 	disp10([[i,errorcodes[j]] for i,j in all_err])

@@ -9,7 +9,7 @@ I chose to use the old but well tested and well known `par2` program to base thi
 
 I use `par2deep` to secure my photos and music across drives, machines and operating systems, and I intend to keep securing my data this way in the decades to come. I felt that the wide availability of the `par2` tool was my best bet.
 
-### Install
+## Install
 
 Simply run the following:
 
@@ -23,6 +23,8 @@ Or run directly with:
 
 After installation, run with `par2deep`. Command line options may be enumerated by using the --help option. Note that `-q` will update, fix or recreate parity files as it sees fit. If unrepairable damage is found, it will recreate parity data.
 
+An optional `par2deep.ini` file may be placed in the target directory, with sections `[exclude]` and/or `[pcmd]` specifying subdirectories that will be ignored and the path to the `par2` executable.
+
 ## Dependencies
 
  * tqdm
@@ -31,6 +33,7 @@ After installation, run with `par2deep`. Command line options may be enumerated 
 
 ### Changelog
 
+ * 2016-08-07: Added optional config files with excludes and path to `par2`.
  * 2016-08-06: Program no longer maps to `par2` commandline options but to `hashdeep` tools: run it, and see what has changed and needs to be done with respect to the previous run.
  * 2016-03-22: Finish port to Python 3, added setup.py.
  * 2016-03-19: Added quiet mode, keep backup files upon unsuccesful repair.
