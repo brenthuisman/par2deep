@@ -87,6 +87,17 @@ def main():
 				else:
 					print(f)
 
+	def displong(lst):
+		x = 0
+		for f in lst:
+			x += 1
+			if isinstance(f, list):
+				print(f[0],':',f[1])
+			else:
+				print(f)
+			if x % 500 == 0:
+				q = input("Press Enter for next 500:")
+
 	create = []
 	print("Checking files without .par2 ...")
 	for f in tqdm(parrables):
@@ -123,10 +134,9 @@ def main():
 	all_actions = create + verify + unused
 	if len(create) > 10 or len(verify) >= 10 or len(unused) >= 10:
 		if not q and ask_yn("Display all filenames?"):
-			for f in all_actions:
-				print(f)
+			displong(all_actions)
 
-	if not q and len(all_actions)>0 and not ask_yn("Perform actions?"):
+	if not q and len(all_actions)>0 and not ask_yn("Perform actions?", default=None):
 		print('Exiting...')
 		return 0
 
@@ -198,7 +208,7 @@ def main():
 	repairedfiles=[]
 	recreatedfiles=[]
 	if len(verifiedfiles_repairable)>0 or len(verifiedfiles_err)>0:
-		if q or (not q and not novfy and ask_yn("Would you like to fix the repairable corrupted files and recreate for unrepairable files?")):
+		if q or (not q and not novfy and ask_yn("Would you like to fix the repairable corrupted files and recreate for unrepairable files?", default=None)):
 			for f,retcode in tqdm(verifiedfiles_repairable):
 				retval = runpar([par_cmd,"r",f])
 				if retval == 0:
@@ -210,7 +220,7 @@ def main():
 				for p in pars:
 					os.remove(p)
 				recreatedfiles.append([ f , runpar([par_cmd,"c","-r"+pc,"-n"+nf,f]) ])
-		elif not q and not novfy and ask_yn("Would you like to recreate par files for the changed and unrepairable files?"):
+		elif not q and not novfy and ask_yn("Would you like to recreate par files for the changed and unrepairable files?", default=None):
 			for f,retcode in tqdm(verifiedfiles_repairable+verifiedfiles_err):
 				pars = glob.glob(f+'*.par2')
 				for p in pars:
