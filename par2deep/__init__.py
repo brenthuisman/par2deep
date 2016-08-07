@@ -168,6 +168,7 @@ def main():
 	createdfiles=[]
 	createdfiles_err=[]
 	if len(create)>0 or over and len(parrables)>0:
+		print('Creating ...')
 		for f in tqdm(parrables if over else create):
 			pars = glob.glob(f+'*.par2')
 			for p in pars:
@@ -179,6 +180,7 @@ def main():
 	verifiedfiles_err=[]
 	verifiedfiles_repairable=[]
 	if not novfy:
+		print('Verifying ...')
 		for f in tqdm(verify):
 			verifiedfiles.append([ f , runpar([par_cmd,"v",f]) ])
 		verifiedfiles_err=[ [i,j] for i,j in verifiedfiles if j != 0 and j != 100 and j != 1 ]
@@ -187,6 +189,7 @@ def main():
 	removedfiles=[]
 	removedfiles_err=[]
 	if not keep:
+		print('Removing ...')
 		for f in tqdm(unused):
 			if os.path.isfile(f): # so os.remove always succeeds and returns None
 				os.remove(f)
