@@ -39,7 +39,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
- * 2016-08-07: Added optional config files with excludes and path to `par2`. Remove glob2 dep.
+ * 2016-08-07: Added optional config files with excludes and path to `par2`.
  * 2016-08-06: Program no longer maps to `par2` commandline options but (loosely) to `hashdeep` tools: run it, and see what has changed and needs to be done with respect to the previous run.
  * 2016-03-22: Finish port to Python 3, added setup.py.
  * 2016-03-19: Added quiet mode, keep backup files upon unsuccesful repair.

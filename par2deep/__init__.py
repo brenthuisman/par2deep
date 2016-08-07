@@ -1,6 +1,5 @@
 import sys,os,subprocess,re,glob
 from collections import Counter
-#import glob2 as glob
 from .ask_yn import ask_yn
 from tqdm import tqdm
 from configargparse import ArgParser
