@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from setuptools import setup
 
-VERSION = '3.2'
+VERSION = '3.3'
 
 with open("README.md", "rb") as f:
     long_descr = f.read()
@@ -26,7 +26,7 @@ def main():
           license='LGPL',
           include_package_data=True,
           zip_safe=False,
-          install_requires=['glob2','tqdm'],
+          install_requires=['tqdm','configargparse'],
           packages=['par2deep'],
           entry_points={
               "console_scripts": ['par2deep = par2deep:main'],

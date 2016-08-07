@@ -1,8 +1,9 @@
-import sys,os,argparse,subprocess,re,configparser
+import sys,os,subprocess,re,glob
 from collections import Counter
-import glob2 as glob
+#import glob2 as glob
 from .ask_yn import ask_yn
 from tqdm import tqdm
+from configargparse import ArgParser
 
 '''
 one mode:
@@ -25,48 +26,40 @@ fifth, final report.
 '''
 
 def main():
-	#configfile
-	config = configparser.ConfigParser(allow_no_value=True,delimiters=('='))
-
 	#CMD arguments and configfile
-	parser = argparse.ArgumentParser()
+	parser = ArgParser(default_config_files=['par2deep.ini', '~/.par2deep'])
+
 	parser.add_argument("-q", "--quiet", action='store_true', help="Don't asks questions, go with all defaults, including repairing and deleting files (default off).")
 	parser.add_argument("-over", "--overwrite", action='store_true', help="Overwrite existing par2 files (default off).")
 	parser.add_argument("-novfy", "--noverify", action='store_true', help="Do not verify existing files (default off).")
 	parser.add_argument("-keep", "--keep_old", action='store_true', help="Keep unused par2 files and old par2 repair files (.1,.2 and so on).")
-	
+	parser.add_argument("-ex", "--excludes", action="append", type=str, default=[], help="Optionally excludes directories ('root' is files in the root of -dir).")
 	parser.add_argument("-dir", "--directory", type=str, default=os.getcwd(), help="Path to operate on (default is current directory).")
 	parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
 	parser.add_argument("-pcmd", "--par_cmd", type=str, default="par2", help="Set path to alternative par2 command (default \"par2\").")
 	args = parser.parse_args()
 
 	nf = str(1) #number of parity files
-	pc = str(args.percentage)
-	dr = os.path.abspath(args.directory)
+
+	q = args.quiet
 	over = args.overwrite
 	novfy = args.noverify
 	keep = args.keep_old
+	excludes=args.excludes
 	q = args.quiet
-	excludes=[]
-
-	if os.path.isfile(os.path.join(dr,'par2deep.ini')):
-		config.read(os.path.join(dr,'par2deep.ini'))
-	try:
-		par_cmd = list(dict(config['pcmd']).keys())[0]
-	except KeyError:
-		par_cmd = args.par_cmd
-	try:
-		excludes = list(dict(config['exclude']).keys())
-	except KeyError:
-		pass #no excludes
+	excludes=args.excludes
+	dr = os.path.abspath(args.directory)
+	pc = str(args.percentage)
+	par_cmd = args.par_cmd
 
 	## Load filesystem
 	print("Using",par_cmd,"...")
 	print("Looking for files in",dr,"...")
 
-	allfiles = [f for f in glob.glob(os.path.join(dr,"**","*")) if os.path.isfile(f)] #not sure why required, but glob may introduce paths...
+	allfiles = [f for f in glob.glob(os.path.join(dr,"**","*"), recursive=True) if os.path.isfile(f)] #not sure why required, but glob may introduce paths...
 	if 'root' in excludes:
 		allfiles = [f for f in allfiles if os.path.dirname(f) != dr]
+		excludes.remove('root')
 	for excl in excludes:
 		allfiles = [f for f in allfiles if not f.startswith(os.path.join(dr,excl))]
 
@@ -170,7 +163,7 @@ def main():
 	if len(create)>0 or over and len(parrables)>0:
 		print('Creating ...')
 		for f in tqdm(parrables if over else create):
-			pars = glob.glob(f+'*.par2')
+			pars = glob.glob(glob.escape(f)+'*.par2')
 			for p in pars:
 				os.remove(p)
 			createdfiles.append([ f , runpar([par_cmd,"c","-r"+pc,"-n"+nf,f]) ])
@@ -179,7 +172,7 @@ def main():
 	verifiedfiles=[]
 	verifiedfiles_err=[]
 	verifiedfiles_repairable=[]
-	if not novfy:
+	if not novfy and not over:
 		print('Verifying ...')
 		for f in tqdm(verify):
 			verifiedfiles.append([ f , runpar([par_cmd,"v",f]) ])
@@ -221,13 +214,14 @@ def main():
 						os.remove(f+".1")
 					repairedfiles.append([ f , "Succesfully repaired" ])
 			for f,retcode in tqdm(verifiedfiles_err):
-				pars = glob.glob(f+'*.par2')
+				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
 					os.remove(p)
 				recreatedfiles.append([ f , runpar([par_cmd,"c","-r"+pc,"-n"+nf,f]) ])
 		elif not q and not novfy and ask_yn("Would you like to recreate par files for the changed and unrepairable files?", default=None):
-			for f,retcode in tqdm(verifiedfiles_repairable+verifiedfiles_err):
-				pars = glob.glob(f+'*.par2')
+			for f,retcode in verifiedfiles_repairable+verifiedfiles_err:
+				pars = glob.glob(glob.escape(f)+'*.par2')
+				print(pars)
 				for p in pars:
 					os.remove(p)
 				recreatedfiles.append([ f , runpar([par_cmd,"c","-r"+pc,"-n"+nf,f]) ])
@@ -247,9 +241,9 @@ def main():
 	print("There were:")
 	print(len(createdfiles),"newly created parity files.")
 	print(len(all_err),"errors.")
-	print(len(repairedfiles),"succesful fixes")
+	print(len(repairedfiles),"attempted fixes, of which",len([f for f in repairedfiles if f !=0]),"failed.")
 	print(len(removedfiles),"files removed.")
-	print(len(recreatedfiles),"overwritten new parity files.")
+	print(len(recreatedfiles),"attempted (overwritten) new parity files, of which",len([f for f in recreatedfiles if f !=0]),"failed.")
 
 	if len(all_err)>0:
 		return 1
