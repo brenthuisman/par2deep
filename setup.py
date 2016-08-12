@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from setuptools import setup
 
-VERSION = '3.3'
+VERSION = '1.0.0'
 
 with open("README.md", "rb") as f:
     long_descr = f.read()
@@ -12,7 +12,7 @@ def main():
           description="Produce, verify and repair par2 files recursively. ",
           long_description=open('README.md').read(),
           classifiers=[
-              'Development Status :: 4 - Beta',
+              'Development Status :: 5 - Production/Stable ',
               'Environment :: Console',
               'Programming Language :: Python :: 3',
               'License :: OSI Approved :: LGPL License',
@@ -29,7 +29,7 @@ def main():
           install_requires=['tqdm','configargparse'],
           packages=['par2deep'],
           entry_points={
-              "console_scripts": ['par2deep = par2deep:main'],
+              "console_scripts": ['par2deep = par2deep.gui:main', 'par2deep-cli = par2deep.cli:main'],
           },
           )
 

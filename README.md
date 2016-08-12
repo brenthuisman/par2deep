@@ -22,7 +22,7 @@ Or run directly with:
 
 ## Usage
 
-After installation, run with `par2deep`. Command line options may be enumerated by using the --help option. Note that `-q` will update, fix or recreate parity files as it sees fit. If unrepairable damage is found, it will recreate parity data.
+After installation, run with `par2deep` for the GUI or `par2deep-cli` if you live in the terminal. Command line options may be enumerated by using the --help option. Note that `-q` will update, fix or recreate parity files as it sees fit. If unrepairable damage is found, it will recreate parity data.
 
 An optional `par2deep.ini` file may be placed in the target directory or as `~/.par2deep` defining all the commandline options. For the excludes, separate by comma.
 
@@ -39,6 +39,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
+ * 2016-08-12: Revamped tool. Reset to v1.0.0. Includes Tkinter gui. cli unchanged apart from cosmetics.
  * 2016-08-07: Added optional config files, excludes, extensions, and parity completeness check.
  * 2016-08-06: Program no longer maps to `par2` commandline options but (loosely) to `hashdeep` tools: run it, and see what has changed and needs to be done with respect to the previous run.
  * 2016-03-22: Finish port to Python 3, added setup.py.
