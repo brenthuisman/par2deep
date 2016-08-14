@@ -31,6 +31,7 @@ def main():
           entry_points={
               "console_scripts": ['par2deep = par2deep.gui:main', 'par2deep-cli = par2deep.cli:main'],
           },
+          scripts=["postinstall.py"],
           )
 
 if __name__ == '__main__':

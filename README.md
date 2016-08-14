@@ -39,6 +39,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
+ * 2016-08-14: Small tweaks.
  * 2016-08-12: Revamped tool. Reset to v1.0.0. Includes Tkinter gui. cli unchanged apart from cosmetics.
  * 2016-08-07: Added optional config files, excludes, extensions, and parity completeness check.
  * 2016-08-06: Program no longer maps to `par2` commandline options but (loosely) to `hashdeep` tools: run it, and see what has changed and needs to be done with respect to the previous run.

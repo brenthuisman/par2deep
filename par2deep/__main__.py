@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-import gui
+from .gui import main
 
-gui.main()
+main()
 
 if __name__ == '__main__':
-    gui.main()
+	main()

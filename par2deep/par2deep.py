@@ -20,14 +20,17 @@ fifth, final report.
 '''
 
 class par2deep():
-	def __init__(self):
+	def __init__(self,chosen_dir=None):
 		#CMD arguments and configfile
 		if sys.platform == 'win32':
 			par_cmd = os.path.join(sys.path[0],'par2.exe')
 		else:
 			par_cmd = 'par2'
 
-		parser = ArgParser(default_config_files=['par2deep.ini', '~/.par2deep'])
+		if chosen_dir == None:
+			parser = ArgParser(default_config_files=['par2deep.ini', '~/.par2deep'])
+		else:
+			parser = ArgParser(default_config_files=[os.path.join(chosen_dir,'par2deep.ini'), '~/.par2deep'])
 
 		parser.add_argument("-q", "--quiet", action='store_true', help="Don't asks questions, go with all defaults, including repairing and deleting files (default off).")
 		parser.add_argument("-over", "--overwrite", action='store_true', help="Overwrite existing par2 files (default off).")
@@ -55,8 +58,9 @@ class par2deep():
 
 	def runpar(self,command):
 		devnull = open(os.devnull, 'wb')
+		#shell true because otherwise pythonw.exe pops up a cmd.exe for EVERY file.
 		try:
-			subprocess.check_call(command,shell=False,stdout=devnull,stderr=devnull)
+			subprocess.check_call(command,shell=True,stdout=devnull,stderr=devnull)
 			return 0
 		except subprocess.CalledProcessError as e:
 			return e.returncode

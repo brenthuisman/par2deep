@@ -62,8 +62,8 @@ class app_frame(Frame):
 		return subframe
 
 
-	def start_options_frame(self):
-		self.p2d = par2deep()
+	def start_options_frame(self,chosen_dir=None):
+		self.p2d = par2deep(chosen_dir)
 
 		self.args = {}
 
@@ -75,12 +75,17 @@ class app_frame(Frame):
 		advset.pack(fill=X)
 
 		def pickdir():
-			self.args["directory"].delete(0,END)
-			self.args["directory"].insert(0,filedialog.askdirectory())
+			# self.args["directory"].delete(0,END)
+			# self.args["directory"].insert(0,filedialog.askdirectory())
+			# self.p2d.__init__(self.args["directory"].get())
+			self.new_window(self.topbar_frame(0), self.start_options_frame(filedialog.askdirectory()), self.start_actions_frame())
 		Button(basicset, text="Pick directory", command=pickdir).pack(side='left')
 		self.args["directory"] = Entry(basicset)
 		self.args["directory"].pack(fill=X)
-		self.args["directory"].insert(0,self.p2d.args["directory"])
+		if chosen_dir == None:
+			self.args["directory"].insert(0,self.p2d.args["directory"])
+		else:
+			self.args["directory"].insert(0,chosen_dir)
 
 		self.args["overwrite"] = IntVar()
 		self.args["overwrite"].set(self.p2d.args["overwrite"])
@@ -94,22 +99,22 @@ class app_frame(Frame):
 		self.args["keep_old"].set(self.p2d.args["keep_old"])
 		Checkbutton(advset, text="Keep old parity files or par2 backup files", variable=self.args["keep_old"]).pack(fill=X)
 
-		Label(advset, text="excludes").pack(fill=X)
+		Label(advset, text="Exclude directories (comma separated)").pack(fill=X)
 		self.args["excludes"] = Entry(advset)
 		self.args["excludes"].pack(fill=X)
 		self.args["excludes"].insert(0,','.join(self.p2d.args["excludes"]))
 
-		Label(advset, text="extexcludes").pack(fill=X)
+		Label(advset, text="Exclude extensions (comma separated)").pack(fill=X)
 		self.args["extexcludes"] = Entry(advset)
 		self.args["extexcludes"].pack(fill=X)
 		self.args["extexcludes"].insert(0,','.join(self.p2d.args["extexcludes"]))
 
-		Label(advset, text="par_cmd").pack(fill=X)
+		Label(advset, text="Path to par2.exe").pack(fill=X)
 		self.args["par_cmd"] = Entry(advset)
 		self.args["par_cmd"].pack(fill=X)
 		self.args["par_cmd"].insert(0,self.p2d.args["par_cmd"])
 
-		Label(advset, text="percentage").pack(fill=X)
+		Label(advset, text="Percentage of protection").pack(fill=X)
 		self.args["percentage"] = IntVar()
 		self.args["percentage"].set(self.p2d.args["percentage"])
 		Scale(advset,orient=HORIZONTAL,from_=3,to=50,resolution=1,variable=self.args["percentage"]).pack(fill=X)
@@ -169,7 +174,7 @@ class app_frame(Frame):
 		subframe = Frame(self)
 		self.pb=Progressbar(subframe, mode='determinate',maximum=length)
 		self.pb.pack(fill=X,expand=True)
-		Label(subframe, text="Executing chosen actions, may take a few moments...").pack(fill=X)
+		Label(subframe, text="Executing actions, may take a few moments...").pack(fill=X)
 		return subframe
 
 
