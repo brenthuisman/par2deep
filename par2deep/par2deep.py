@@ -23,8 +23,10 @@ class par2deep():
 	def __init__(self,chosen_dir=None):
 		#CMD arguments and configfile
 		if sys.platform == 'win32':
+			self.shell=True
 			par_cmd = os.path.join(sys.path[0],'par2.exe')
 		else:
+			self.shell=False
 			par_cmd = 'par2'
 
 		if chosen_dir == None:
@@ -60,7 +62,7 @@ class par2deep():
 		devnull = open(os.devnull, 'wb')
 		#shell true because otherwise pythonw.exe pops up a cmd.exe for EVERY file.
 		try:
-			subprocess.check_call(command,shell=True,stdout=devnull,stderr=devnull)
+			subprocess.check_call(command,shell=self.shell,stdout=devnull,stderr=devnull)
 			return 0
 		except subprocess.CalledProcessError as e:
 			return e.returncode
