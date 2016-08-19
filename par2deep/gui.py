@@ -348,7 +348,10 @@ class app_frame(Frame):
 		for node,label in nodes.items():
 			thing = tree.insert("", 'end', text=label, open=False)
 			for item in getattr(self.p2d,node):
-				tree.insert(thing, 'end', text=item, open=False)
+				if not isinstance(item, list):
+					tree.insert(thing, 'end', text=item, open=False)
+				else:
+					tree.insert(thing, 'end', text=item[0], open=False)
 
 		return subframe
 
