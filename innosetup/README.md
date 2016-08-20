@@ -1,1 +1,0 @@
-Get Innosetup. Get winpython (zero). Install par2deep into Winpython. Compile par2deep.iss.
