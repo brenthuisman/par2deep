@@ -24,7 +24,7 @@ class par2deep():
 		#CMD arguments and configfile
 		if sys.platform == 'win32':
 			self.shell=True
-			par_cmd = os.path.join(sys.path[0],'par2.exe')
+			par_cmd = os.path.join(sys.path[0],'phpar2.exe')
 		else:
 			self.shell=False
 			par_cmd = 'par2'
