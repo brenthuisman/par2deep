@@ -72,7 +72,10 @@ class app_frame(Frame):
 
 
 	def start_options_frame(self,chosen_dir=None):
-		self.p2d = par2deep.par2deep(chosen_dir)
+		try:
+			self.p2d = par2deep.par2deep(chosen_dir)
+		except TypeError:
+			self.p2d = par2deep.par2deep.par2deep(chosen_dir)
 
 		self.args = {}
 

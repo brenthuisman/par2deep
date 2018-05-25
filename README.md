@@ -20,6 +20,10 @@ Or run directly with:
 
     $ python par2deep
 
+Alternatively, if you have installed the `cx_Freeze` package, you can generate an msi package for Windows. Adapt `setup_cx.py` to suit your needs (include the `par2` executable and, most importantly, the icon of your choice) and then build the `.msi` file in `/dist`:
+
+    $ python setup_cx.py bdist_msi
+
 ## Usage
 
 After installation, run with `par2deep` for the GUI or `par2deep-cli` if you live in the terminal. Command line options may be enumerated by using the --help option. Note that `-q` will update, fix or recreate parity files as it sees fit. If unrepairable damage is found, it will recreate parity data.
