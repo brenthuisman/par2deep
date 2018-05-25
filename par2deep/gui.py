@@ -4,7 +4,7 @@ from tkinter import *
 from tkinter.ttk import *
 from tkinter import Scale #new one sucks
 from tkinter import filedialog #old one dont work
-from .par2deep import par2deep
+import par2deep
 
 
 class app_frame(Frame):
@@ -20,6 +20,15 @@ class app_frame(Frame):
 		#middle screen shows options or info
 		#bottom bar shows actions
 		self.new_window(self.topbar_frame(0), self.start_options_frame(), self.start_actions_frame())
+		return
+	
+	
+	def startfile(self, fname):
+		fname = os.path.normpath(fname)
+		if sys.platform == 'win32':
+			os.startfile(fname)
+		elif sys.platform == 'linux':
+			os.system("nohup xdg-open \""+fname+"\" >/dev/null 2>&1 &")
 		return
 
 
@@ -63,7 +72,7 @@ class app_frame(Frame):
 
 
 	def start_options_frame(self,chosen_dir=None):
-		self.p2d = par2deep(chosen_dir)
+		self.p2d = par2deep.par2deep(chosen_dir)
 
 		self.args = {}
 
@@ -259,13 +268,6 @@ class app_frame(Frame):
 		return
 
 
-	def abort_frame(self):
-		subframe = Frame(self)
-		Label(toplevel, text="Invalid par2 executable given.").pack(fill=X)
-		Button(toplevel, text="NExit.", command=self.master.destroy).pack(fill=X)
-		return subframe
-
-
 	def set_start_actions(self):
 		#update p2d args.
 		self.p2d.args["quiet"] = False #has no meaning in gui
@@ -341,9 +343,14 @@ class app_frame(Frame):
 
 		ysb = Scrollbar(subframe, orient='vertical', command=tree.yview)
 		ysb.pack(side="right", fill=Y, expand=False)
+		
+		def doubleclick_tree(event):
+			self.startfile(tree.item(tree.selection()[0],"text"))
+			return
 
 		tree.configure(yscroll=ysb.set)
 		tree.heading('#0', text="Actions", anchor='w')
+		tree.bind("<Double-1>", doubleclick_tree)
 
 		for node,label in nodes.items():
 			thing = tree.insert("", 'end', text=label, open=False)
@@ -352,6 +359,7 @@ class app_frame(Frame):
 					tree.insert(thing, 'end', text=item, open=False)
 				else:
 					tree.insert(thing, 'end', text=item[0], open=False)
+					
 
 		return subframe
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import threading,time,queue
-from tqdm import tqdm
-from .par2deep import par2deep
-from .ask_yn import ask_yn
+import tqdm
+import par2deep
+import ask_yn
 
 def displong(lst,q=False):
 	x = 0
@@ -22,11 +22,11 @@ def disp10(lst,q=False):
 				print(f[0],':',f[1])
 			else:
 				print(f)
-	elif not q and ask_yn("Display these files?"):
+	elif not q and ask_yn.ask_yn("Display these files?"):
 		displong(lst)
 
 def main():
-	p2d = par2deep()
+	p2d = par2deep.par2deep()
 
 	print("Using",p2d.par_cmd,"...")
 	print("Looking for files in",p2d.directory,"...")
@@ -47,12 +47,12 @@ def main():
 	print('Will remove',len(p2d.par2errcopies),'old repair files.')
 	disp10(p2d.par2errcopies,p2d.quiet)
 
-	if not p2d.quiet and p2d.len_all_actions>0 and not ask_yn("Perform actions?", default=None):
+	if not p2d.quiet and p2d.len_all_actions>0 and not ask_yn.ask_yn("Perform actions?", default=None):
 		print('Exiting...')
 		return 1
 
 	print(p2d.len_all_actions)
-	with tqdm(total=p2d.len_all_actions, unit='files', unit_scale=True) as pbar:
+	with tqdm.tqdm(total=p2d.len_all_actions, unit='files', unit_scale=True) as pbar:
 		for i in p2d.execute():
 			pbar.update(i)
 
@@ -70,12 +70,12 @@ def main():
 
 	noaction=False
 	if p2d.len_verified_actions>0:
-		if p2d.quiet or (not p2d.quiet and not p2d.noverify and ask_yn("Would you like to fix the repairable corrupted files and recreate for unrepairable files?", default=None)):
-			with tqdm(total=p2d.len_verified_actions, unit='files', unit_scale=True) as pbar:
+		if p2d.quiet or (not p2d.quiet and not p2d.noverify and ask_yn.ask_yn("Would you like to fix the repairable corrupted files and recreate for unrepairable files?", default=None)):
+			with tqdm.tqdm(total=p2d.len_verified_actions, unit='files', unit_scale=True) as pbar:
 				for i in p2d.execute_repair():
 					pbar.update(i)
-		elif not p2d.quiet and not p2d.noverify and ask_yn("Would you like to recreate par files for the changed and unrepairable files?", default=None):
-			with tqdm(total=p2d.len_verified_actions, unit='files', unit_scale=True) as pbar:
+		elif not p2d.quiet and not p2d.noverify and ask_yn.ask_yn("Would you like to recreate par files for the changed and unrepairable files?", default=None):
+			with tqdm.tqdm(total=p2d.len_verified_actions, unit='files', unit_scale=True) as pbar:
 				for i in p2d.execute_recreate():
 					pbar.update(i)
 		else:

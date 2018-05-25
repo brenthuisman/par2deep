@@ -39,6 +39,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
+ * 2018-05-25: Crossplatform doubleclick in treeview. Improved Windows par2 executable finding. New cx_Freeze installer script. Converted relative imports.
  * 2016-08-20: Ensured par2 command is called correctly from Windows and other OS in GUI mode. Added NSIS installer script.
  * 2016-08-12: Revamped tool. Reset to v1.0.0. Includes Tkinter gui. cli unchanged apart from cosmetics.
  * 2016-08-07: Added optional config files, excludes, extensions, and parity completeness check.
