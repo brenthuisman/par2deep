@@ -6,6 +6,60 @@ from tkinter import Scale #new one sucks
 from tkinter import filedialog #old one dont work
 import par2deep
 
+class CreateToolTip(object):
+	"""
+	create a tooltip for a given widget.
+	Copied from https://stackoverflow.com/a/36221216
+	"""
+	def __init__(self, widget, text='widget info'):
+		self.waittime = 500     #miliseconds
+		self.wraplength = 250   #pixels
+		self.widget = widget
+		self.text = text
+		self.widget.bind("<Enter>", self.enter)
+		self.widget.bind("<Leave>", self.leave)
+		self.widget.bind("<ButtonPress>", self.leave)
+		self.id = None
+		self.tw = None
+
+	def enter(self, event=None):
+		self.schedule()
+
+	def leave(self, event=None):
+		self.unschedule()
+		self.hidetip()
+
+	def schedule(self):
+		self.unschedule()
+		self.id = self.widget.after(self.waittime, self.showtip)
+
+	def unschedule(self):
+		id = self.id
+		self.id = None
+		if id:
+			self.widget.after_cancel(id)
+
+	def showtip(self, event=None):
+		x = y = 0
+		x, y, cx, cy = self.widget.bbox("insert")
+		x += self.widget.winfo_rootx() + 25
+		y += self.widget.winfo_rooty() + 20
+		# creates a toplevel window
+		self.tw = Toplevel(self.widget)
+		# Leaves only the label and removes the app window
+		self.tw.wm_overrideredirect(True)
+		self.tw.wm_geometry("+%d+%d" % (x, y))
+		label = Label(self.tw, text=self.text, justify='left',
+					background="#ffffff", relief='solid', borderwidth=1,
+					wraplength = self.wraplength)
+		label.pack(ipadx=1)
+
+	def hidetip(self):
+		tw = self.tw
+		self.tw= None
+		if tw:
+			tw.destroy()
+
 
 class app_frame(Frame):
 	def __init__(self, master):
@@ -25,10 +79,11 @@ class app_frame(Frame):
 	
 	def startfile(self, fname):
 		fname = os.path.normpath(fname)
-		if sys.platform == 'win32':
-			os.startfile(fname)
-		elif sys.platform == 'linux':
-			os.system("nohup xdg-open \""+fname+"\" >/dev/null 2>&1 &")
+		if os.path.isfile(fname): #otherwise its probably a category in the treeview
+			if sys.platform == 'win32':
+				os.startfile(fname)
+			elif sys.platform == 'linux':
+				os.system("nohup xdg-open \""+fname+"\" >/dev/null 2>&1 &")
 		return
 
 
@@ -101,35 +156,46 @@ class app_frame(Frame):
 
 		self.args["overwrite"] = IntVar()
 		self.args["overwrite"].set(self.p2d.args["overwrite"])
-		Checkbutton(advset, text="Overwrite all parity data", variable=self.args["overwrite"]).pack(fill=X)
+		cb1 = Checkbutton(advset, text="Overwrite all parity data", variable=self.args["overwrite"])
+		cb1.pack(fill=X)
+		CreateToolTip(cb1,"Any existing parity data found (any *.par* files) will be removed and overwritten.")
 
 		self.args["noverify"] = IntVar()
 		self.args["noverify"].set(self.p2d.args["noverify"])
-		Checkbutton(advset, text="Skip verification", variable=self.args["noverify"]).pack(fill=X)
+		cb2 = Checkbutton(advset, text="Skip verification", variable=self.args["noverify"])
+		cb2.pack(fill=X)
+		CreateToolTip(cb2,"Skips verification of files with existing parity data. Use when you only want to create parity data for new files.")
 
 		self.args["keep_old"] = IntVar()
 		self.args["keep_old"].set(self.p2d.args["keep_old"])
-		Checkbutton(advset, text="Keep old parity files or par2 backup files", variable=self.args["keep_old"]).pack(fill=X)
+		cb3 = Checkbutton(advset, text="Keep old parity files or par2 backup files", variable=self.args["keep_old"])
+		cb3.pack(fill=X)
+		CreateToolTip(cb3,"Do not remove par backup files (*.[0-9]) and do not remove unused parity files (*.par*).")
 
 		Label(advset, text="Exclude directories (comma separated)").pack(fill=X)
 		self.args["excludes"] = Entry(advset)
 		self.args["excludes"].pack(fill=X)
 		self.args["excludes"].insert(0,','.join(self.p2d.args["excludes"]))
+		CreateToolTip(self.args["excludes"],"These subdirectories will be excluded from the analysis. Use 'root' for the root of the directory.")
 
 		Label(advset, text="Exclude extensions (comma separated)").pack(fill=X)
 		self.args["extexcludes"] = Entry(advset)
 		self.args["extexcludes"].pack(fill=X)
 		self.args["extexcludes"].insert(0,','.join(self.p2d.args["extexcludes"]))
+		CreateToolTip(self.args["extexcludes"],"These extensions will be excluded from the analysis.")
 
 		Label(advset, text="Path to par2.exe").pack(fill=X)
 		self.args["par_cmd"] = Entry(advset)
 		self.args["par_cmd"].pack(fill=X)
 		self.args["par_cmd"].insert(0,self.p2d.args["par_cmd"])
-
+		CreateToolTip(self.args["par_cmd"],"Should be set automatically and correctly, but can be overriden.")
+		
 		Label(advset, text="Percentage of protection").pack(fill=X)
 		self.args["percentage"] = IntVar()
 		self.args["percentage"].set(self.p2d.args["percentage"])
-		Scale(advset,orient=HORIZONTAL,from_=3,to=50,resolution=1,variable=self.args["percentage"]).pack(fill=X)
+		s1 = Scale(advset,orient=HORIZONTAL,from_=3,to=20,resolution=1,variable=self.args["percentage"])
+		s1.pack(fill=X)
+		CreateToolTip(s1,"The maximum percentage of corrupted data you will be able to recover from. Higher is safer, but uses more data.")
 
 		return subframe
 
@@ -356,13 +422,15 @@ class app_frame(Frame):
 		tree.bind("<Double-1>", doubleclick_tree)
 
 		for node,label in nodes.items():
-			thing = tree.insert("", 'end', text=label, open=False)
-			for item in getattr(self.p2d,node):
-				if not isinstance(item, list):
-					tree.insert(thing, 'end', text=item, open=False)
-				else:
-					tree.insert(thing, 'end', text=item[0], open=False)
-					
+			if len(getattr(self.p2d,node))==0:
+				tree.insert("", 'end', text=label+": no files in this category.", open=False)
+			else:
+				thing = tree.insert("", 'end', text=label+": expand to see "+str(len(getattr(self.p2d,node)))+" files.", open=False)
+				for item in getattr(self.p2d,node):
+					if not isinstance(item, list):
+						tree.insert(thing, 'end', text=item, open=False)
+					else:
+						tree.insert(thing, 'end', text=item[0], open=False)
 
 		return subframe
 

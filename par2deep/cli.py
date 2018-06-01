@@ -26,7 +26,10 @@ def disp10(lst,q=False):
 		displong(lst)
 
 def main():
-	p2d = par2deep.par2deep()
+	try:
+		self.p2d = par2deep.par2deep()
+	except TypeError:
+		self.p2d = par2deep.par2deep.par2deep()
 
 	print("Using",p2d.par_cmd,"...")
 	print("Looking for files in",p2d.directory,"...")
