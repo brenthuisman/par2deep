@@ -193,7 +193,7 @@ class app_frame(Frame):
 		Label(advset, text="Percentage of protection").pack(fill=X)
 		self.args["percentage"] = IntVar()
 		self.args["percentage"].set(self.p2d.args["percentage"])
-		s1 = Scale(advset,orient=HORIZONTAL,from_=3,to=20,resolution=1,variable=self.args["percentage"])
+		s1 = Scale(advset,orient=HORIZONTAL,from_=5,to=100,resolution=1,variable=self.args["percentage"])
 		s1.pack(fill=X)
 		CreateToolTip(s1,"The maximum percentage of corrupted data you will be able to recover from. Higher is safer, but uses more data.")
 
@@ -291,7 +291,7 @@ class app_frame(Frame):
 			if not self.cnt_stop:
 				self.pb.step(self.cnt)
 				self.cnt=0
-				self.master.after(500, upd)
+				self.master.after(self.waittime, upd)
 			else:
 				return
 
@@ -329,7 +329,7 @@ class app_frame(Frame):
 			if not self.cnt_stop:
 				self.pb.step(self.cnt)
 				self.cnt=0
-				self.master.after(500, upd)
+				self.master.after(self.waittime, upd)
 			else:
 				return
 
@@ -397,7 +397,7 @@ class app_frame(Frame):
 			if not self.cnt_stop:
 				self.pb.step(self.cnt)
 				self.cnt=0
-				self.master.after(500, upd)
+				self.master.after(self.waittime, upd)
 			else:
 				return
 

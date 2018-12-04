@@ -27,13 +27,13 @@ def disp10(lst,q=False):
 
 def main():
 	try:
-		self.p2d = par2deep.par2deep()
+		p2d = par2deep.par2deep()
 	except TypeError:
-		self.p2d = par2deep.par2deep.par2deep()
+		p2d = par2deep.par2deep.par2deep()
 
 	print("Using",p2d.par_cmd,"...")
 	print("Looking for files in",p2d.directory,"...")
-
+	
 	if p2d.check_state() == 200:
 		print("The par2 command you specified is invalid.")
 		return 1
