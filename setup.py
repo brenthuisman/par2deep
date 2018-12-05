@@ -12,10 +12,13 @@ def main():
           description="Produce, verify and repair par2 files recursively. ",
           long_description=open('README.md').read(),
           classifiers=[
-              'Development Status :: 5 - Production/Stable ',
+              'Development Status :: 5 - Production/Stable',
               'Environment :: Console',
+              'Environment :: MacOS X',
+              'Environment :: Win32 (MS Windows)',
+              'Environment :: X11 Applications',
               'Programming Language :: Python :: 3',
-              'License :: OSI Approved :: LGPL License',
+              'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
               'Topic :: Utilities',
               'Operating System :: OS Independent'
           ],

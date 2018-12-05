@@ -12,9 +12,13 @@ I use `par2deep` to secure my photos and music across drives, machines and opera
 
 ## Install
 
-Simply run the following:
+You can now use pip!
 
-    $ python setup.py install --user
+    $ pip(3) install par2deep (--user)
+
+Or clone/download this repo and install manually with:
+
+    $ python(3) setup.py install (--user)
 
 Or run directly with:
 
