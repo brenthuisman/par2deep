@@ -15,7 +15,7 @@ class CreateToolTip(object):
 	Copied from https://stackoverflow.com/a/36221216
 	"""
 	def __init__(self, widget, text='widget info'):
-		self.waittime = 500     #miliseconds
+		self.waittime = 500     #milliseconds
 		self.wraplength = 250   #pixels
 		self.widget = widget
 		self.text = text
@@ -71,6 +71,7 @@ class app_frame(Frame):
 		#main window has 1 frame, thats it
 		Grid.rowconfigure(master, 0, weight=1)
 		Grid.columnconfigure(master, 0, weight=1)
+		self.waittime = 500     #milliseconds
 
 		#swithin that, frames, row-wise, which are updated as necesary.
 		#topbar: displays stage of verification
@@ -252,7 +253,9 @@ class app_frame(Frame):
 		subframe = Frame(self)
 		self.pb=Progressbar(subframe, mode='determinate',maximum=length)
 		self.pb.pack(fill=X,expand=True)
-		Label(subframe, text="Executing actions, may take a few moments...").pack(fill=X)
+		self.pb_currentfile = StringVar()
+		self.pb_currentfile.set("Executing actions, may take a few moments...")
+		Label(subframe, textvariable = self.pb_currentfile).pack(fill=X)
 		return subframe
 
 
@@ -269,7 +272,8 @@ class app_frame(Frame):
 		self.cnt_stop = False
 		def run():
 			for i in self.p2d.execute_repair():
-				self.cnt+=i
+				self.cnt+=1
+				self.currentfile = i
 			dispdict = {
 				'verifiedfiles_succes' : 'Verified and in order',
 				'createdfiles' : 'Newly created parity files',
@@ -290,6 +294,7 @@ class app_frame(Frame):
 		def upd():
 			if not self.cnt_stop:
 				self.pb.step(self.cnt)
+				self.pb_currentfile.set("Processing "+os.path.basename(self.currentfile))
 				self.cnt=0
 				self.master.after(self.waittime, upd)
 			else:
@@ -307,7 +312,8 @@ class app_frame(Frame):
 		self.cnt_stop = False
 		def run():
 			for i in self.p2d.execute_recreate():
-				self.cnt+=i
+				self.cnt+=1
+				self.currentfile = i
 			dispdict = {
 				'verifiedfiles_succes' : 'Verified and in order',
 				'createdfiles' : 'Newly created parity files',
@@ -328,6 +334,7 @@ class app_frame(Frame):
 		def upd():
 			if not self.cnt_stop:
 				self.pb.step(self.cnt)
+				self.pb_currentfile.set("Processing "+os.path.basename(self.currentfile))
 				self.cnt=0
 				self.master.after(self.waittime, upd)
 			else:
@@ -378,7 +385,8 @@ class app_frame(Frame):
 		self.cnt_stop = False
 		def run():
 			for i in self.p2d.execute():
-				self.cnt+=i
+				self.cnt+=1
+				self.currentfile = i
 			dispdict = {
 				'verifiedfiles_succes' : 'Verified and in order',
 				'createdfiles' : 'Newly created parity files',
@@ -396,6 +404,7 @@ class app_frame(Frame):
 		def upd():
 			if not self.cnt_stop:
 				self.pb.step(self.cnt)
+				self.pb_currentfile.set("Processing "+os.path.basename(self.currentfile))
 				self.cnt=0
 				self.master.after(self.waittime, upd)
 			else:

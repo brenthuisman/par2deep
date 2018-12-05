@@ -15,6 +15,7 @@ second, depending on overrides, propose actions and ask user confirmation
 		- no file but .par2
 		- override = dont remove .par2 if no file
 third, execute user choices.
+	- these _execute function are iterable through yield, which is done at the start of the loop such that we know what the current file being worked on is.
 fourth, ask to repair if possible/necesary.
 fifth, final report.
 '''
@@ -184,7 +185,7 @@ class par2deep():
 		if len(create)>0:
 			#print('Creating ...')
 			for f in create:
-				yield 1
+				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
 					os.remove(p)
@@ -198,7 +199,7 @@ class par2deep():
 		if not self.noverify and not self.overwrite and len(verify)>0:
 			#print('Verifying ...')
 			for f in verify:
-				yield 1
+				yield f
 				verifiedfiles.append([ f , self.runpar([self.par_cmd,"v",f]) ])
 			verifiedfiles_err=[ [i,j] for i,j in verifiedfiles if j != 0 and j != 100 and j != 1 ]
 			verifiedfiles_repairable=[ [i,j] for i,j in verifiedfiles if j == 1 ]
@@ -209,7 +210,7 @@ class par2deep():
 		if not self.keep_old and len(unused)>0:
 			#print('Removing ...')
 			for f in unused:
-				yield 1
+				yield f
 				if os.path.isfile(f): # so os.remove always succeeds and returns None
 					os.remove(f)
 					removedfiles.append([ f , 100 ])
@@ -237,14 +238,14 @@ class par2deep():
 		recreatedfiles=[]
 		if self.len_verified_actions>0:
 			for f,retcode in self.verifiedfiles_repairable:
-				yield 1
+				yield f
 				retval = self.runpar([self.par_cmd,"r",f])
 				if retval == 0:
 					if not self.keep_old and os.path.isfile(f+".1"):
 						os.remove(f+".1")
 					repairedfiles.append([ f , retval ])
 			for f,retcode in self.verifiedfiles_err:
-				yield 1
+				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
 					os.remove(p)
@@ -265,7 +266,7 @@ class par2deep():
 		recreatedfiles=[]
 		if self.len_verified_actions>0:
 			for f,retcode in self.verifiedfiles_repairable+self.verifiedfiles_err:
-				yield 1
+				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
 					os.remove(p)

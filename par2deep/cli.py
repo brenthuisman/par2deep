@@ -60,7 +60,8 @@ def main():
 	print(p2d.len_all_actions)
 	with tqdm.tqdm(total=p2d.len_all_actions, unit='files', unit_scale=True) as pbar:
 		for i in p2d.execute():
-			pbar.update(i)
+			pbar.update(1)
+			pbar.set_postfix_str(i[-20:])
 
 	print("==========================================================")
 	print(len(p2d.verifiedfiles_succes),'files verified and in order.')
@@ -79,11 +80,13 @@ def main():
 		if p2d.quiet or (not p2d.quiet and not p2d.noverify and ask_yn("Would you like to fix the repairable corrupted files and recreate for unrepairable files?", default=None)):
 			with tqdm.tqdm(total=p2d.len_verified_actions, unit='files', unit_scale=True) as pbar:
 				for i in p2d.execute_repair():
-					pbar.update(i)
+					pbar.update(1)
+					pbar.set_postfix_str(i[-20:])
 		elif not p2d.quiet and not p2d.noverify and ask_yn("Would you like to recreate par files for the changed and unrepairable files?", default=None):
 			with tqdm.tqdm(total=p2d.len_verified_actions, unit='files', unit_scale=True) as pbar:
 				for i in p2d.execute_recreate():
-					pbar.update(i)
+					pbar.update(1)
+					pbar.set_postfix_str(i[-20:])
 		else:
 			noaction=True
 			# print('No reparation or recreation will take place.')
