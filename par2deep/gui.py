@@ -4,7 +4,10 @@ from tkinter import *
 from tkinter.ttk import *
 from tkinter import Scale #new one sucks
 from tkinter import filedialog #old one dont work
-import par2deep
+try:
+	from .par2deep import *
+except:
+	from par2deep import *
 
 class CreateToolTip(object):
 	"""
@@ -127,10 +130,7 @@ class app_frame(Frame):
 
 
 	def start_options_frame(self,chosen_dir=None):
-		try:
-			self.p2d = par2deep.par2deep(chosen_dir)
-		except TypeError:
-			self.p2d = par2deep.par2deep.par2deep(chosen_dir)
+		self.p2d = par2deep(chosen_dir)
 
 		self.args = {}
 
@@ -277,7 +277,7 @@ class app_frame(Frame):
 				'createdfiles_err' : 'Errors during creating parity files',
 				'removedfiles_err' : 'Errors during file removal',
 				'fixes' : 'Verified files succesfully fixed',
-				'fixes_err' : 'Verified files failed to fix.',
+				'fixes_err' : 'Verified files failed to fix',
 				'recreate' : 'Succesfully recreated (overwritten) parity files',
 				'recreate_err' : 'Failed (overwritten) new parity files'
 				}
@@ -423,7 +423,7 @@ class app_frame(Frame):
 
 		for node,label in nodes.items():
 			if len(getattr(self.p2d,node))==0:
-				tree.insert("", 'end', text=label+": no files in this category.", open=False)
+				tree.insert("", 'end', text=label+": no files.", open=False)
 			else:
 				thing = tree.insert("", 'end', text=label+": expand to see "+str(len(getattr(self.p2d,node)))+" files.", open=False)
 				for item in getattr(self.p2d,node):
