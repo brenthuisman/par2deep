@@ -9,6 +9,7 @@ try:
 except:
 	from par2deep import *
 
+
 class CreateToolTip(object):
 	"""
 	create a tooltip for a given widget.
@@ -79,8 +80,8 @@ class app_frame(Frame):
 		#bottom bar shows actions
 		self.new_window(self.topbar_frame(0), self.start_options_frame(), self.start_actions_frame())
 		return
-	
-	
+
+
 	def startfile(self, fname):
 		fname = os.path.normpath(fname)
 		if os.path.isfile(fname): #otherwise its probably a category in the treeview
@@ -190,7 +191,7 @@ class app_frame(Frame):
 		self.args["par_cmd"].pack(fill=X)
 		self.args["par_cmd"].insert(0,self.p2d.args["par_cmd"])
 		CreateToolTip(self.args["par_cmd"],"Should be set automatically and correctly, but can be overriden.")
-		
+
 		Label(advset, text="Percentage of protection").pack(fill=X)
 		self.args["percentage"] = IntVar()
 		self.args["percentage"].set(self.p2d.args["percentage"])
@@ -289,6 +290,7 @@ class app_frame(Frame):
 			#put p2d.len_all_err somewhere in label of final report
 			self.cnt_stop = True
 		thread = threading.Thread(target=run)
+		thread.daemon = True
 		thread.start()
 
 		def upd():
@@ -329,6 +331,7 @@ class app_frame(Frame):
 			#put p2d.len_all_err somewhere in label of final report
 			self.cnt_stop = True
 		thread = threading.Thread(target=run)
+		thread.daemon = True
 		thread.start()
 
 		def upd():
@@ -372,6 +375,7 @@ class app_frame(Frame):
 				}
 			self.new_window(self.topbar_frame(1), self.scrollable_treeview_frame(dispdict), self.execute_actions_frame())
 		thread = threading.Thread(target=run)
+		thread.daemon = True
 		thread.start()
 		return
 
@@ -399,6 +403,7 @@ class app_frame(Frame):
 			self.new_window(self.topbar_frame(3), self.scrollable_treeview_frame(dispdict), self.repair_actions_frame())
 			self.cnt_stop = True
 		thread = threading.Thread(target=run)
+		thread.daemon = True
 		thread.start()
 
 		def upd():
@@ -421,7 +426,7 @@ class app_frame(Frame):
 
 		ysb = Scrollbar(subframe, orient='vertical', command=tree.yview)
 		ysb.pack(side="right", fill=Y, expand=False)
-		
+
 		def doubleclick_tree(event):
 			self.startfile(tree.item(tree.selection()[0],"text"))
 			return
@@ -459,7 +464,7 @@ def main():
 	x = (ws/2) - (w/2)
 	y = (hs/2) - (h/2)
 
-	# set the dimensions of the screen 
+	# set the dimensions of the screen
 	# and where it is placed
 	root.geometry('%dx%d+%d+%d' % (w, h, x, y))
 	root.wm_title("par2deep")

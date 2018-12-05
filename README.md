@@ -43,6 +43,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
+ * 2018-12-05: v1.0.4: Gui mode is now shutdownable (threads dont keep running in the background anymore).
  * 2018-12-05: v1.0.3. Once again fixed imports. Should now work with local, pip-installed and bundled versions. Gui and cli now show filename during executing actions stage.
  * 2018-05-30: v1.0.2. GUI updates: file doubleclick now checkes if string is file, added tooltips to GUI settings, and treeview category headers have a bit for info (nb of files in category). CLI updates: same par2deep import check as GUI.
  * 2018-05-25: v1.0.1. Crossplatform doubleclick in treeview. Improved Windows par2 executable finding. New cx_Freeze installer script. Converted relative imports.
