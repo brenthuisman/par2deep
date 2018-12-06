@@ -252,7 +252,8 @@ class app_frame(Frame):
 
 	def progress_frame(self,length):
 		subframe = Frame(self)
-		self.pb=Progressbar(subframe, mode='determinate',maximum=length)
+		self.pb=Progressbar(subframe, mode='determinate',maximum=length+0.01)
+		#+.01 to make sure bar is not full when last file processed.
 		self.pb.pack(fill=X,expand=True)
 		self.pb_currentfile = StringVar()
 		self.pb_currentfile.set("Executing actions, may take a few moments...")
@@ -427,24 +428,47 @@ class app_frame(Frame):
 		ysb = Scrollbar(subframe, orient='vertical', command=tree.yview)
 		ysb.pack(side="right", fill=Y, expand=False)
 
+		tree.configure(yscroll=ysb.set)
+		#tree.heading('#0', text="Category", anchor='w')
+		tree["columns"]=("fname","action")
+		tree.column("#0", width=20, stretch=False)
+		tree.heading("action", text="Action")
+		tree.column("action", width=60, stretch=False)
+		tree.column("fname", stretch=True)
+		tree.heading("fname", text="Filename")
+		
+
 		def doubleclick_tree(event):
-			self.startfile(tree.item(tree.selection()[0],"text"))
+			self.startfile(tree.item(tree.selection()[0],"values")[0])
 			return
 
-		tree.configure(yscroll=ysb.set)
-		tree.heading('#0', text="Actions", anchor='w')
+		def do_popup(event):
+			print (tree.selection())
+			popup = Menu(self.master, tearoff=0)
+			popup.add_command(label="Next") # , command=next) etc...
+			popup.add_command(label="Previous")
+			popup.add_separator()
+			popup.add_command(label="Home")
+			# display the popup menu
+			try:
+				popup.tk_popup(event.x_root, event.y_root, 0)
+			finally:
+				# make sure to release the grab (Tk 8.0a1 only)
+				popup.grab_release()
+
 		tree.bind("<Double-1>", doubleclick_tree)
+		tree.bind("<Button-3>", do_popup)
 
 		for node,label in nodes.items():
 			if len(getattr(self.p2d,node))==0:
-				tree.insert("", 'end', text=label+": no files.", open=False)
+				tree.insert("", 'end', values=(label+": no files.",""), open=False)
 			else:
-				thing = tree.insert("", 'end', text=label+": expand to see "+str(len(getattr(self.p2d,node)))+" files.", open=False)
+				thing = tree.insert("", 'end', values=(label+": expand to see "+str(len(getattr(self.p2d,node)))+" files.",""), open=False)
 				for item in getattr(self.p2d,node):
 					if not isinstance(item, list):
-						tree.insert(thing, 'end', text=item, open=False)
+						tree.insert(thing, 'end', values=(item,node), open=False)
 					else:
-						tree.insert(thing, 'end', text=item[0], open=False)
+						tree.insert(thing, 'end', values=(item[0],node), open=False)
 
 		return subframe
 
