@@ -442,22 +442,19 @@ class app_frame(Frame):
 			self.startfile(tree.item(tree.selection()[0],"values")[0])
 			return
 
-		def do_popup(event):
+		def show_contextmenu(event):
 			print (tree.selection())
 			popup = Menu(self.master, tearoff=0)
-			popup.add_command(label="Next") # , command=next) etc...
-			popup.add_command(label="Previous")
-			popup.add_separator()
-			popup.add_command(label="Home")
-			# display the popup menu
+			for node,label in nodes.items():
+				popup.add_command(label=node)
 			try:
-				popup.tk_popup(event.x_root, event.y_root, 0)
+				popup.tk_popup(event.x_root, event.y_root)
 			finally:
 				# make sure to release the grab (Tk 8.0a1 only)
 				popup.grab_release()
 
 		tree.bind("<Double-1>", doubleclick_tree)
-		tree.bind("<Button-3>", do_popup)
+		tree.bind("<Button-3>", show_contextmenu)
 
 		for node,label in nodes.items():
 			if len(getattr(self.p2d,node))==0:
