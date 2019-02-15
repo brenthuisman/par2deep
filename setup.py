@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from setuptools import setup
 
-VERSION = '1.0.4'
+VERSION = '1.0.5'
 
 with open("README.md", "rb") as f:
     long_descr = f.read()
@@ -29,7 +29,7 @@ def main():
           license='LGPL',
           include_package_data=True,
           zip_safe=False,
-          install_requires=['tqdm','configargparse'],
+          install_requires=['tqdm','configargparse','Send2Trash'],
           packages=['par2deep'],
           entry_points={
               "console_scripts": ['par2deep = par2deep.gui:main', 'par2deep-cli = par2deep.cli:main'],

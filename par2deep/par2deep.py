@@ -1,5 +1,6 @@
 import sys,os,subprocess,re,glob
 from configargparse import ArgParser
+from send2trash import send2trash
 
 '''
 first, init disk state.
@@ -175,8 +176,8 @@ class par2deep():
 			6: "IO error.",
 			7: "Internal error",
 			8: "Out of memory.",
-			100: "os.remove succeeded.",
-			101: "os.remove did not succeed.",
+			100: "send2trash succeeded.",
+			101: "send2trash did not succeed.",
 			200: "par2 command not found."
 		}
 
@@ -188,7 +189,7 @@ class par2deep():
 				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
-					os.remove(p)
+					send2trash(p)
 				createdfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 			createdfiles_err=[ [i,j] for i,j in createdfiles if j != 0 and j != 100 ]
 
@@ -211,8 +212,8 @@ class par2deep():
 			#print('Removing ...')
 			for f in unused:
 				yield f
-				if os.path.isfile(f): # so os.remove always succeeds and returns None
-					os.remove(f)
+				if os.path.isfile(f): # so send2trash always succeeds and returns None
+					send2trash(f)
 					removedfiles.append([ f , 100 ])
 				else:
 					removedfiles.append([ f , 101 ])
@@ -242,13 +243,13 @@ class par2deep():
 				retval = self.runpar([self.par_cmd,"r",f])
 				if retval == 0:
 					if not self.keep_old and os.path.isfile(f+".1"):
-						os.remove(f+".1")
+						send2trash(f+".1")
 					repairedfiles.append([ f , retval ])
 			for f,retcode in self.verifiedfiles_err:
 				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
-					os.remove(p)
+					send2trash(p)
 				recreatedfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 
 		self.recreate = sorted(recreatedfiles)
@@ -269,7 +270,7 @@ class par2deep():
 				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
-					os.remove(p)
+					send2trash(p)
 				recreatedfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 
 		self.recreate = sorted(recreatedfiles)
