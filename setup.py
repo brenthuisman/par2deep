@@ -3,14 +3,12 @@ from setuptools import setup
 
 VERSION = '1.0.5'
 
-with open("README.md", "rb") as f:
-    long_descr = f.read()
-
 def main():
     setup(name='par2deep',
           version=VERSION,
           description="Produce, verify and repair par2 files recursively. ",
           long_description=open('README.md').read(),
+          long_description_content_type="text/markdown",
           classifiers=[
               'Development Status :: 5 - Production/Stable',
               'Environment :: Console',

@@ -1,12 +1,12 @@
 ## par2deep
 
-Analogous to the various *deep commands (md5deep, hasdeep...) this tool serves to create, verify and repair parity files in an entire directory hierarchy.
+Analogous to the various *deep commands (md5deep, hashdeep...) this tool serves to create, verify and repair parity files in a file tree.
 
 This tool will generate one parity file (plus a file for the recovery blocks) per file that you protect. This makes it simple to move files if you change your mind on how your file tree must be organized. Just move the `par2` files along.
 
 ## Motivation
 
-I chose to use the old but well tested and well known `par2` program to base this tool on, instead of similar tools such as `zfec`, `rsbep` or something like `pyFileFixity`. Some recent forks of `par2` have added recursive scanning abilities, but they're generally not cross-platform.
+I chose to use the old but well tested and well known `par2` program to base this tool on, instead of similar tools such as `zfec`, `rsbep` or something like `pyFileFixity`. Some recent forks of `par2` have added recursive scanning abilities, but they're generally not cross-platform. They also do not offer an interactive way of diagnosing (parts of) your file tree, and different problem handling for different areas of your file tree.
 
 I use `par2deep` to secure my photos and music across drives, machines and operating systems, and I intend to keep securing my data this way in the decades to come. I felt that the wide availability of the `par2` tool was my best bet.
 
@@ -23,6 +23,8 @@ Or clone/download this repo and install manually with:
 Or run directly with:
 
     $ python par2deep
+
+On Linux, you may have to install the `tkinter` module for the version of Python you are using. Consult your distro's repository for installation details (Ubuntu: `sudo apt install python3-tk`).
 
 Alternatively, if you have installed the `cx_Freeze` package, you can generate an msi package for Windows. Adapt `setup_cx.py` to suit your needs (include the `par2` executable and, most importantly, the icon of your choice) and then build the `.msi` file in `/dist`:
 
