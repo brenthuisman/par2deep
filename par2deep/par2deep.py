@@ -48,7 +48,8 @@ class par2deep():
 		parser.add_argument("-q", "--quiet", action='store_true', help="Don't asks questions, go with all defaults, including repairing and deleting files (default off).")
 		parser.add_argument("-over", "--overwrite", action='store_true', help="Overwrite existing par2 files (default off).")
 		parser.add_argument("-novfy", "--noverify", action='store_true', help="Do not verify existing files (default off).")
-		parser.add_argument("-keep", "--keep_old", action='store_true', help="Keep unused par2 files and old par2 repair files (.1,.2 and so on).")
+		parser.add_argument("-keepor", "--keep_orphan", action='store_true', help="Keep orphaned par2 files.")
+		parser.add_argument("-keepbu", "--keep_backup", action='store_true', help="Keep backups created by par2 (.1,.2 and so on).")
 		parser.add_argument("-ex", "--excludes", action="append", type=str, default=[], help="Optionally excludes directories ('root' is files in the root of -dir).")
 		parser.add_argument("-exex", "--extexcludes", action="append", type=str, default=[], help="Optionally excludes file extensions.")
 		parser.add_argument("-dir", "--directory", type=str, default=os.getcwd(), help="Path to operate on (default is current directory).")
@@ -133,7 +134,7 @@ class par2deep():
 				incomplete.append(f)
 
 		unused = []
-		if not self.keep_old:
+		if not self.keep_orphan:
 			#print("Checking for unused par2 files ...")
 			for f in par2files:
 				if not os.path.isfile(f[:-5]):
@@ -208,7 +209,7 @@ class par2deep():
 
 		removedfiles=[]
 		removedfiles_err=[]
-		if not self.keep_old and len(unused)>0:
+		if not self.keep_orphan and len(unused)>0:
 			#print('Removing ...')
 			for f in unused:
 				yield f
@@ -242,7 +243,7 @@ class par2deep():
 				yield f
 				retval = self.runpar([self.par_cmd,"r",f])
 				if retval == 0:
-					if not self.keep_old and os.path.isfile(f+".1"):
+					if not self.keep_backup and os.path.isfile(f+".1"):
 						send2trash(f+".1")
 					repairedfiles.append([ f , retval ])
 			for f,retcode in self.verifiedfiles_err:

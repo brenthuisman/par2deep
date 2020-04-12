@@ -168,11 +168,17 @@ class app_frame(Frame):
 		cb2.pack(fill=X)
 		CreateToolTip(cb2,"Skips verification of files with existing parity data. Use when you only want to create parity data for new files.")
 
-		self.args["keep_old"] = IntVar()
-		self.args["keep_old"].set(self.p2d.args["keep_old"])
-		cb3 = Checkbutton(advset, text="Keep old parity files or par2 backup files", variable=self.args["keep_old"])
+		self.args["keep_orphan"] = IntVar()
+		self.args["keep_orphan"].set(self.p2d.args["keep_orphan"])
+		cb3 = Checkbutton(advset, text="Keep orphaned par2 files.", variable=self.args["keep_orphan"])
 		cb3.pack(fill=X)
-		CreateToolTip(cb3,"Do not remove par backup files (*.[0-9]) and do not remove unused parity files (*.par*).")
+		CreateToolTip(cb3,"Do not remove unused parity files (*.par*).")
+
+		self.args["keep_backup"] = IntVar()
+		self.args["keep_backup"].set(self.p2d.args["keep_backup"])
+		cb3 = Checkbutton(advset, text="Keep backup files", variable=self.args["keep_backup"])
+		cb3.pack(fill=X)
+		CreateToolTip(cb3,"Do not remove backup files (*.[0-9]).")
 
 		Label(advset, text="Exclude directories (comma separated)").pack(fill=X)
 		self.args["excludes"] = Entry(advset)
@@ -353,7 +359,8 @@ class app_frame(Frame):
 		self.p2d.args["quiet"] = False #has no meaning in gui
 		self.p2d.args["overwrite"] = self.args["overwrite"].get() == 1
 		self.p2d.args["noverify"] = self.args["noverify"].get() == 1
-		self.p2d.args["keep_old"] = self.args["keep_old"].get() == 1
+		self.p2d.args["keep_orphan"] = self.args["keep_orphan"].get() == 1
+		self.p2d.args["keep_backup"] = self.args["keep_backup"].get() == 1
 		self.p2d.args["excludes"] = self.args["excludes"].get().split(',') if self.args["excludes"].get().split(',') != [''] else []
 		self.p2d.args["extexcludes"] = self.args["extexcludes"].get().split(',') if self.args["extexcludes"].get().split(',') != [''] else []
 		self.p2d.args["directory"] = os.path.abspath(self.args["directory"].get())
