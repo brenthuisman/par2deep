@@ -40,19 +40,23 @@ class par2deep():
 			self.shell=False
 			par_cmd = 'par2'
 
-		if chosen_dir == None:
+		if chosen_dir == None or not os.path.isdir(chosen_dir):
+			current_data_dir = os.getcwd()
 			parser = ArgParser(default_config_files=['par2deep.ini', '~/.par2deep'])
 		else:
-			parser = ArgParser(default_config_files=[os.path.join(chosen_dir,'par2deep.ini'), '~/.par2deep'])
+			current_data_dir = os.path.abspath(chosen_dir)
+			parser = ArgParser(default_config_files=[os.path.join(current_data_dir,'par2deep.ini'), '~/.par2deep'])
 
 		parser.add_argument("-q", "--quiet", action='store_true', help="Don't asks questions, go with all defaults, including repairing and deleting files (default off).")
 		parser.add_argument("-over", "--overwrite", action='store_true', help="Overwrite existing par2 files (default off).")
 		parser.add_argument("-novfy", "--noverify", action='store_true', help="Do not verify existing files (default off).")
 		parser.add_argument("-keepor", "--keep_orphan", action='store_true', help="Keep orphaned par2 files.")
+		#parser.add_argument("-seppardir", "--separate_parity_directory", action='store_true', help="Store parity data in a subdirectory.")
 		parser.add_argument("-keepbu", "--keep_backup", action='store_true', help="Keep backups created by par2 (.1,.2 and so on).")
 		parser.add_argument("-ex", "--excludes", action="append", type=str, default=[], help="Optionally excludes directories ('root' is files in the root of -dir).")
 		parser.add_argument("-exex", "--extexcludes", action="append", type=str, default=[], help="Optionally excludes file extensions.")
-		parser.add_argument("-dir", "--directory", type=str, default=os.getcwd(), help="Path to operate on (default is current directory).")
+		parser.add_argument("-dir", "--directory", type=str, default=current_data_dir, help="Path to protect (default is current directory).")
+		#parser.add_argument("-pardir", "--parity_directory", type=str, default=os.getcwd(), help="Path to parity data store (default is current directory).")
 		parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
 		parser.add_argument("-pcmd", "--par_cmd", type=str, default=par_cmd, help="Set path to alternative par2 command (default \"par2\").")
 		
