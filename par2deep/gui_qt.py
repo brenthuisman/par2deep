@@ -1,12 +1,11 @@
-import threading
-try:
-	from PyQt5.QtWidgets import *
-	from PyQt5.QtGui import QIcon
-	from PyQt5.QtCore import QSettings
-except: #FIXME test this!!!
-	from PySide2.QtWidgets import *
-	from PySide2.QtGui import QIcon
-	from PySide2.QtCore import QSettings
+#import threading
+#try:
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QIcon,QStandardItemModel
+from PyQt5.QtCore import QSettings,Qt
+#except: #FIXME test this!!!
+	#from PySide2.QtWidgets import *
+	#etc
 try:
 	from .par2deep import *
 	from .gui_helpers import *
@@ -90,18 +89,15 @@ class app_window(QMainWindow):
 		cb2.setToolTip("Skips verification of files with existing parity data. Use when you just want to create parity data for newly added files.")
 		cb2.stateChanged.connect(lambda fldval : self.p2d.args.update({"noverify":bool(fldval)}))
 		
-		
 		cb3 = QCheckBox("Keep orphaned par2 files")
 		cb3.setChecked(self.p2d.args["keep_orphan"])
 		cb3.setToolTip("Do not remove unused parity files (*.par*).")
 		cb3.stateChanged.connect(lambda fldval : self.p2d.args.update({"keep_orphan":bool(fldval)}))
 		
-		
 		cb4 = QCheckBox("Keep backup files")
 		cb4.setChecked(self.p2d.args["keep_backup"])
 		cb4.setToolTip("Do not remove backup files (*.[0-9]).")
 		cb4.stateChanged.connect(lambda fldval : self.p2d.args.update({"keep_backup":bool(fldval)}))
-		
 		
 		ex_lb = QLabel("Exclude directories (comma separated):")
 		ex_fld = QLineEdit(','.join(self.p2d.args["excludes"]))
@@ -201,12 +197,6 @@ class app_window(QMainWindow):
 
 
 	def progress_indef_frame(self):
-		#subframe = Frame(self)
-		#self.pb=Progressbar(subframe, mode='indeterminate')
-		#self.pb.start()
-		#self.pb.pack(fill=X,expand=True)
-		#Label(subframe, text="Indexing directory, may take a few moments...").pack(fill=X)
-		
 		self.pb = QProgressBar()
 		self.pb.setRange(0,0) #indefinite
 		lb = QLabel("Indexing directory, may take a few moments...")
@@ -321,10 +311,13 @@ class app_window(QMainWindow):
 	def set_start_actions(self):
 		# DEBUG: print(self.p2d.args)
 		
+		self.p2d_t = par2deep_thread(self.p2d)
+		
 		#go to second frame
 		self.new_window(self.topbar_frame(0), self.blank_frame(), self.progress_indef_frame())
-		#self.update() # FIXME: doet dit wat? tkinter?
-		def run():
+		
+		def run(check_state_retval,pd2_obj):
+			self.pd2 = pd2_obj
 			if self.p2d.check_state() == 200:
 				self.new_window(self.topbar_frame(0), self.exit_frame(), self.exit_actions_frame())
 				return
@@ -336,9 +329,9 @@ class app_window(QMainWindow):
 				'par2errcopies' : 'Remove old repair files'
 				}
 			self.new_window(self.topbar_frame(1), self.scrollable_treeview_frame(dispdict), self.execute_actions_frame())
-		thread = threading.Thread(target=run)
-		thread.daemon = True
-		thread.start()
+		
+		self.p2d_t.check_state_retval.connect(run)
+		self.p2d_t.start()
 		return
 
 
@@ -382,52 +375,51 @@ class app_window(QMainWindow):
 
 
 	def scrollable_treeview_frame(self,nodes={}):
-		tree = QTreeView()
-		'''
-		tree.pack(side="left",fill=BOTH,expand=True)
-
-		ysb = Scrollbar(subframe, orient='vertical', command=tree.yview)
-		ysb.pack(side="right", fill=Y, expand=False)
-
-		tree.configure(yscroll=ysb.set)
-		#tree.heading('#0', text="Category", anchor='w')
-		tree["columns"]=("fname","action")
-		tree.column("#0", width=20, stretch=False)
-		tree.heading("action", text="Action")
-		tree.column("action", width=60, stretch=False)
-		tree.column("fname", stretch=True)
-		tree.heading("fname", text="Filename")
+		tree=QTreeWidget()
+		tree.setHeaderLabels(["Filename", "Action"])
+		tree.setColumnWidth(0,400) #unf at this point tree.width is not jet set to the onscreen value.
+		tree.setContextMenuPolicy(Qt.CustomContextMenu);
 		
-
-		def doubleclick_tree(event):
-			self.startfile(tree.item(tree.selection()[0],"values")[0])
-			return
-
-		def show_contextmenu(event):
-			print (tree.selection())
-			popup = Menu(self.master, tearoff=0)
-			for node,label in nodes.items():
-				popup.add_command(label=node)
-			try:
-				popup.tk_popup(event.x_root, event.y_root)
-			finally:
-				# make sure to release the grab (Tk 8.0a1 only)
-				popup.grab_release()
-
-		tree.bind("<Double-1>", doubleclick_tree)
-		tree.bind("<Button-3>", show_contextmenu)
-
-		for node,label in nodes.items():
+		for i,(node,label) in enumerate(nodes.items()):
 			if len(getattr(self.p2d,node))==0:
-				tree.insert("", 'end', values=(label+": no files.",""), open=False)
+				tree.addTopLevelItem(QTreeWidgetItem(None,
+					[label+": no files.",'']
+					))
 			else:
-				thing = tree.insert("", 'end', values=(label+": expand to see "+str(len(getattr(self.p2d,node)))+" files.",""), open=False)
+				thing = QTreeWidgetItem(None,
+					[label+": expand to see "+str(len(getattr(self.p2d,node))),'']
+					)
+				tree.addTopLevelItem(thing)
+
 				for item in getattr(self.p2d,node):
 					if not isinstance(item, list):
-						tree.insert(thing, 'end', values=(item,node), open=False)
+						thing.addChild(QTreeWidgetItem(None,
+							[item,node]
+							))
 					else:
-						tree.insert(thing, 'end', values=(item[0],node), open=False)
-'''
+						thing.addChild(QTreeWidgetItem(None,
+							[item[0],node]
+							))
+
+		# http://blog.asimation.com/37/
+		
+		def doubleclick_tree(event):
+			startfile(tree.currentItem().text(0))
+			return
+		
+		tree.itemDoubleClicked.connect(doubleclick_tree)
+
+		def show_contextmenu(position):
+			popup = QMenu()
+			for node,label in nodes.items():
+				popup.addAction(label)
+			action = popup.exec_(tree.mapToGlobal(position))
+			print(action)
+			#for node,label in nodes.items():
+				#if action == quitAction:
+				#qApp.quit()
+				
+		tree.customContextMenuRequested.connect(show_contextmenu)
 		
 		subframe = QWidget()
 		l = QHBoxLayout()

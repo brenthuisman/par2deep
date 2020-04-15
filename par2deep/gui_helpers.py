@@ -1,6 +1,6 @@
-import os
+import os,sys
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLabel
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt,QThread,pyqtSignal
 
 def startfile(fname): #not really gui related...
 	fname = os.path.normpath(fname)
@@ -10,6 +10,7 @@ def startfile(fname): #not really gui related...
 		elif sys.platform == 'linux':
 			os.system("nohup xdg-open \""+fname+"\" >/dev/null 2>&1 &")
 	return
+
 
 class BSlider(QWidget):
 	def __init__(self, title, minval, maxval, slot=None, defval=0, orientation=Qt.Horizontal, parent=None):
@@ -60,3 +61,13 @@ class BSlider(QWidget):
 		except:
 			pass
 
+
+class par2deep_thread(QThread):
+	
+	check_state_retval = pyqtSignal(int,'PyQt_PyObject')
+	def __init__(self,p2d_obj):
+		QThread.__init__(self)
+		self.p2d=p2d_obj
+	def run(self):
+		#self.p2d.args['wololo']=True
+		self.check_state_retval.emit(self.p2d.check_state(),self.p2d)
