@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from setuptools import setup
 
-VERSION = '1.0.5'
+VERSION = '1.9.0'
 
 def main():
     setup(name='par2deep',
@@ -30,7 +30,7 @@ def main():
           install_requires=['tqdm','configargparse','Send2Trash'],
           packages=['par2deep'],
           entry_points={
-              "console_scripts": ['par2deep = par2deep.gui:main', 'par2deep-cli = par2deep.cli:main'],
+              "console_scripts": ['par2deep = par2deep.gui_py:main', 'par2deep-cli = par2deep.cli:main'],
           }
           )
 

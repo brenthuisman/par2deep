@@ -1,11 +1,6 @@
-#import threading
-#try:
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon,QStandardItemModel
 from PyQt5.QtCore import QSettings,Qt
-#except: #FIXME test this!!!
-	#from PySide2.QtWidgets import *
-	#etc
 try:
 	from .par2deep import *
 	from .gui_helpers import *
@@ -150,17 +145,30 @@ class app_window(QMainWindow):
 		l.addWidget(ssa_btn)
 		l.addStretch(1)
 		subframe.setLayout(l)
-		
 		return subframe
 
 
 	def repair_actions_frame(self):
-		subframe = Frame(self)
+		subframe = QWidget()
+		l = QHBoxLayout()
+		l.addStretch(1)
+		
 		if self.p2d.len_verified_actions > 0:
-			Button(subframe, text="Fix repairable corrupted files and recreate unrepairable files", command=self.repair_action).pack()
-			Button(subframe, text="Recreate parity files for the changed and unrepairable files", command=self.recreate_action).pack()
+			btn1 = QPushButton("Fix repairable corrupted files and recreate unrepairable files")
+			btn1.clicked.connect(self.repair_action)
+			l.addWidget(btn1)
+			
+			btn2 = QPushButton("Recreate parity files for the repairable and unrepairable files")
+			btn2.clicked.connect(self.recreate_action)
+			l.addWidget(btn2)
 		else:
-			Button(subframe, text="Nothing to do. Exit.", command=self.master.destroy).pack()
+			btn1 = QPushButton("Nothing to do. Exit.")
+			btn1.clicked.connect(QApplication.instance().quit)
+			l.addWidget(btn1)
+			
+		l.addStretch(1)
+		subframe.setLayout(l)
+		
 		return subframe
 
 
@@ -170,7 +178,7 @@ class app_window(QMainWindow):
 			b.clicked.connect(self.execute_actions)
 		else:
 			b=QPushButton("Nothing to do. Exit.")
-			#b.clicked.connect(sys.exit)
+			b.clicked.connect(QApplication.instance().quit)
 		
 		subframe = QWidget()
 		l = QHBoxLayout()
@@ -183,28 +191,39 @@ class app_window(QMainWindow):
 
 
 	def exit_actions_frame(self):
-		subframe = Frame(self)
+		b=QPushButton("Exit.")
+		b.clicked.connect(QApplication.instance().quit)
+		
+		subframe = QWidget()
+		l = QVBoxLayout()
+		l.addStretch(1)
 		if hasattr(self.p2d,'len_all_err'):
-			Label(subframe, text="There were "+str(self.p2d.len_all_err)+" errors.").pack(fill=X)
-		Button(subframe, text="Exit", command=self.master.destroy).pack()
+			l.addWidget(QLabel("There were "+str(self.p2d.len_all_err)+" errors."))
+		l.addWidget(b)
+		l.addStretch(1)
+		subframe.setLayout(l)
 		return subframe
 
 
 	def exit_frame(self):
-		subframe = Frame(self)
-		Label(subframe, text="The par2 command you specified is invalid.").pack(fill=X)
+		subframe = QWidget()
+		l = QHBoxLayout()
+		l.addStretch(1)
+		l.addWidget(QLabel("The par2 command you specified is invalid."))
+		l.addStretch(1)
+		subframe.setLayout(l)
 		return subframe
 
 
 	def progress_indef_frame(self):
-		self.pb = QProgressBar()
-		self.pb.setRange(0,0) #indefinite
+		pb = QProgressBar()
+		pb.setRange(0,0) #indefinite
 		lb = QLabel("Indexing directory, may take a few moments...")
 		
 		subframe = QWidget()
 		l = QVBoxLayout()
 		l.addStretch(1)
-		l.addWidget(self.pb)
+		l.addWidget(pb)
 		l.addWidget(lb)
 		l.addStretch(1)
 		subframe.setLayout(l)
@@ -212,13 +231,17 @@ class app_window(QMainWindow):
 
 
 	def progress_frame(self,length):
-		subframe = Frame(self)
-		self.pb=Progressbar(subframe, mode='determinate',maximum=length+0.01)
-		#+.01 to make sure bar is not full when last file processed.
-		self.pb.pack(fill=X,expand=True)
-		self.pb_currentfile = StringVar()
-		self.pb_currentfile.set("Executing actions, may take a few moments...")
-		Label(subframe, textvariable = self.pb_currentfile).pack(fill=X)
+		self.pb = QProgressBar()
+		self.pb.setRange(0,length) #indefinite
+		self.pb_currentfile = QLabel("Executing actions, may take a few moments...")
+		
+		subframe = QWidget()
+		l = QVBoxLayout()
+		l.addStretch(1)
+		l.addWidget(self.pb)
+		l.addWidget(self.pb_currentfile)
+		l.addStretch(1)
+		subframe.setLayout(l)
 		return subframe
 
 
@@ -228,14 +251,11 @@ class app_window(QMainWindow):
 
 	def repair_action(self):
 		self.new_window(self.topbar_frame(4), self.blank_frame(), self.progress_frame(self.p2d.len_verified_actions))
-		self.update()
 
-		self.cnt = 0
-		self.cnt_stop = False
-		def run():
-			for i in self.p2d.execute_repair():
-				self.cnt+=1
-				self.currentfile = i
+		self.p2d_t = progress_thread(self.p2d,'execute_repair')
+		
+		def run(pd2_obj):
+			self.pd2 = pd2_obj
 			dispdict = {
 				'verifiedfiles_succes' : 'Verified and in order',
 				'createdfiles' : 'Newly created parity files',
@@ -249,34 +269,24 @@ class app_window(QMainWindow):
 				}
 			self.new_window(self.topbar_frame(5), self.scrollable_treeview_frame(dispdict), self.exit_actions_frame())
 			#put p2d.len_all_err somewhere in label of final report
-			self.cnt_stop = True
-		thread = threading.Thread(target=run)
-		thread.daemon = True
-		thread.start()
-
-		def upd():
-			if not self.cnt_stop:
-				self.pb.step(self.cnt)
-				self.pb_currentfile.set("Processing "+os.path.basename(self.currentfile))
-				self.cnt=0
-				self.master.after(self.waittime, upd)
-			else:
-				return
-
-		upd()
+		
+		def upd(cnt,currentfile):
+			self.pb.setValue(cnt)
+			self.pb_currentfile.setText("Processing "+os.path.basename(currentfile))
+		
+		self.p2d_t.progress.connect(upd)
+		self.p2d_t.retval.connect(run)
+		self.p2d_t.start()
 		return
 
 
 	def recreate_action(self):
 		self.new_window(self.topbar_frame(4), self.blank_frame(), self.progress_frame(self.p2d.len_verified_actions))
-		self.update()
 
-		self.cnt = 0
-		self.cnt_stop = False
-		def run():
-			for i in self.p2d.execute_recreate():
-				self.cnt+=1
-				self.currentfile = i
+		self.p2d_t = progress_thread(self.p2d,'execute_recreate')
+		
+		def run(pd2_obj):
+			self.pd2 = pd2_obj
 			dispdict = {
 				'verifiedfiles_succes' : 'Verified and in order',
 				'createdfiles' : 'Newly created parity files',
@@ -290,35 +300,28 @@ class app_window(QMainWindow):
 				}
 			self.new_window(self.topbar_frame(5), self.scrollable_treeview_frame(dispdict), self.exit_actions_frame())
 			#put p2d.len_all_err somewhere in label of final report
-			self.cnt_stop = True
-		thread = threading.Thread(target=run)
-		thread.daemon = True
-		thread.start()
-
-		def upd():
-			if not self.cnt_stop:
-				self.pb.step(self.cnt)
-				self.pb_currentfile.set("Processing "+os.path.basename(self.currentfile))
-				self.cnt=0
-				self.master.after(self.waittime, upd)
-			else:
-				return
-
-		upd()
+		
+		def upd(cnt,currentfile):
+			self.pb.setValue(cnt)
+			self.pb_currentfile.setText("Processing "+os.path.basename(currentfile))
+		
+		self.p2d_t.progress.connect(upd)
+		self.p2d_t.retval.connect(run)
+		self.p2d_t.start()
 		return
 
 
 	def set_start_actions(self):
 		# DEBUG: print(self.p2d.args)
 		
-		self.p2d_t = par2deep_thread(self.p2d)
+		self.p2d_t = check_state_thread(self.p2d)
 		
 		#go to second frame
 		self.new_window(self.topbar_frame(0), self.blank_frame(), self.progress_indef_frame())
 		
 		def run(check_state_retval,pd2_obj):
 			self.pd2 = pd2_obj
-			if self.p2d.check_state() == 200:
+			if check_state_retval == 200:
 				self.new_window(self.topbar_frame(0), self.exit_frame(), self.exit_actions_frame())
 				return
 			dispdict = {
@@ -336,16 +339,13 @@ class app_window(QMainWindow):
 
 
 	def execute_actions(self):
-		#go to third frame
 		self.new_window(self.topbar_frame(2), self.blank_frame(), self.progress_frame(self.p2d.len_all_actions))
-		self.update()
 
-		self.cnt = 0
-		self.cnt_stop = False
-		def run():
-			for i in self.p2d.execute():
-				self.cnt+=1
-				self.currentfile = i
+		#go to third frame		
+		self.p2d_t = progress_thread(self.p2d,'execute')
+		
+		def run(pd2_obj):
+			self.pd2 = pd2_obj
 			dispdict = {
 				'verifiedfiles_succes' : 'Verified and in order',
 				'createdfiles' : 'Newly created parity files',
@@ -356,28 +356,21 @@ class app_window(QMainWindow):
 				'removedfiles_err' : 'Errors during file removal'
 				}
 			self.new_window(self.topbar_frame(3), self.scrollable_treeview_frame(dispdict), self.repair_actions_frame())
-			self.cnt_stop = True
-		thread = threading.Thread(target=run)
-		thread.daemon = True
-		thread.start()
-
-		def upd():
-			if not self.cnt_stop:
-				self.pb.step(self.cnt)
-				self.pb_currentfile.set("Processing "+os.path.basename(self.currentfile))
-				self.cnt=0
-				self.master.after(self.waittime, upd)
-			else:
-				return
-
-		upd()
+		
+		def upd(cnt,currentfile):
+			self.pb.setValue(cnt)
+			self.pb_currentfile.setText("Processing "+os.path.basename(currentfile))
+		
+		self.p2d_t.progress.connect(upd)
+		self.p2d_t.retval.connect(run)
+		self.p2d_t.start()
 		return
 
 
 	def scrollable_treeview_frame(self,nodes={}):
 		tree=QTreeWidget()
 		tree.setHeaderLabels(["Filename", "Action"])
-		tree.setColumnWidth(0,400) #unf at this point tree.width is not jet set to the onscreen value.
+		tree.setColumnWidth(0,600) #unf at this point tree.width is not jet set to the onscreen value.
 		tree.setContextMenuPolicy(Qt.CustomContextMenu);
 		
 		for i,(node,label) in enumerate(nodes.items()):
@@ -390,7 +383,8 @@ class app_window(QMainWindow):
 					[label+": expand to see "+str(len(getattr(self.p2d,node))),'']
 					)
 				tree.addTopLevelItem(thing)
-
+	
+				# FIXME: show files in fs hierarchy, not flat
 				for item in getattr(self.p2d,node):
 					if not isinstance(item, list):
 						thing.addChild(QTreeWidgetItem(None,
@@ -415,6 +409,7 @@ class app_window(QMainWindow):
 				popup.addAction(label)
 			action = popup.exec_(tree.mapToGlobal(position))
 			print(action)
+			# FIXME actually change actions per file.
 			#for node,label in nodes.items():
 				#if action == quitAction:
 				#qApp.quit()

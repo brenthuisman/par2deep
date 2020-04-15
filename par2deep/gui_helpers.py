@@ -62,12 +62,29 @@ class BSlider(QWidget):
 			pass
 
 
-class par2deep_thread(QThread):
-	
+class progress_thread(QThread):
+	progress = pyqtSignal(int,str)
+	retval = pyqtSignal('PyQt_PyObject')
+	def __init__(self,p2d_obj,iterable_func):
+		QThread.__init__(self)
+		self.p2d=p2d_obj
+		self.iterable_func = iterable_func
+	def run(self):
+		cnt = 0
+		#for i in self.p2d.execute_recreate():
+		for i in getattr(self.p2d, self.iterable_func)():
+			cnt+=1
+			currentfile = i
+			self.progress.emit(cnt,currentfile)
+		self.retval.emit(self.p2d)
+
+
+class check_state_thread(QThread):
 	check_state_retval = pyqtSignal(int,'PyQt_PyObject')
 	def __init__(self,p2d_obj):
 		QThread.__init__(self)
 		self.p2d=p2d_obj
 	def run(self):
 		#self.p2d.args['wololo']=True
-		self.check_state_retval.emit(self.p2d.check_state(),self.p2d)
+		state = self.p2d.check_state()
+		self.check_state_retval.emit(state,self.p2d)
