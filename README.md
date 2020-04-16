@@ -24,8 +24,6 @@ Or run directly with:
 
     $ python par2deep
 
-On Linux, you may have to install the `tkinter` module for the version of Python you are using. Consult your distro's repository for installation details (Ubuntu: `sudo apt install python3-tk`).
-
 Alternatively, if you have installed the `cx_Freeze` package, you can generate an msi package for Windows. Adapt `setup_cx.py` to suit your needs (include the `par2` executable and, most importantly, the icon of your choice) and then build the `.msi` file in `/dist`:
 
     $ python setup_cx.py bdist_msi

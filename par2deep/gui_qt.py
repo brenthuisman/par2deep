@@ -1,12 +1,9 @@
+import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon,QStandardItemModel
 from PyQt5.QtCore import QSettings,Qt
-try:
-	from .par2deep import *
-	from .toolbox import *
-except:
-	from par2deep import *
-	from toolbox import *
+from par2deep import *
+from toolbox import *
 
 
 class app_window(QMainWindow):
@@ -425,9 +422,7 @@ class app_window(QMainWindow):
 
 
 
-if __name__ == '__main__':
-
-	import sys
+def main():
 	app = QApplication(sys.argv)
 	#print(QStyleFactory.keys())
 	#try:
@@ -437,3 +432,6 @@ if __name__ == '__main__':
 	mw = app_window()
 	mw.show()
 	sys.exit(app.exec_())
+
+if __name__ == "__main__":
+	main()

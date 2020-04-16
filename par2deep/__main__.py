@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import gui
+import gui_qt
 
 if __name__ == '__main__':
-    gui_py.main()
+    gui_qt.main()

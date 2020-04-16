@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 import tqdm
-try:
-	from .par2deep import *
-except:
-	from par2deep import *
-try:
-	from .toolbox import ask_yn
-except:
-	from toolbox import ask_yn
+from par2deep import *
+from toolbox import ask_yn
 
 def displong(lst,q=False):
 	x = 0
