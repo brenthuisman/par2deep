@@ -32,23 +32,28 @@ Alternatively, if you have installed the `cx_Freeze` package, you can generate a
 
 ## Usage
 
-After installation, run with `par2deep` for the GUI or `par2deep-cli` if you live in the terminal. Command line options may be enumerated by using the --help option. Note that `-q` will update, fix or recreate parity files as it sees fit. If unrepairable damage is found, it will recreate parity data.
+After installation, run with `par2deep` for the GUI or `par2deep-cli` if you live in the terminal. Command line options may be enumerated by using the --help option. Note that `-q` will update, fix or recreate parity files as it sees fit. If unrepairable damage is found, it will recreate parity data. (The old tkinter GUI is unmaintained but available at `par2deep-tk`.)
 
 An optional `par2deep.ini` file may be placed in the target directory or as `~/.par2deep` defining all the commandline options. For the excludes, separate by comma.
 
 Example `par2deep.ini`:
 
 	excludes = [new, root]
+	extexcludes = [JPG, jpg]
 	par_cmd = c:/sync/apps/par/par2.exe
 
 ## Dependencies
 
  * tqdm
  * configargparse
+ * Send2Trash
+ * PyQt5
  * `par2` in path or specify a tool with the same interface.
 
 ### Changelog
 
+ * 2020-04-16: v1.9.0: GUI rewritten in with Qt (PyQt5). Open Issues should be solved for 2.0.0 release.
+ * 2019-02-15: v1.0.5: Instead of deleting files (os.remove), now Send2Trash is used.
  * 2018-12-05: v1.0.4: Gui mode is now shutdownable (threads dont keep running in the background anymore).
  * 2018-12-05: v1.0.3. Once again fixed imports. Should now work with local, pip-installed and bundled versions. Gui and cli now show filename during executing actions stage.
  * 2018-05-30: v1.0.2. GUI updates: file doubleclick now checkes if string is file, added tooltips to GUI settings, and treeview category headers have a bit for info (nb of files in category). CLI updates: same par2deep import check as GUI.

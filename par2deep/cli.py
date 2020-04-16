@@ -1,14 +1,13 @@
 #!/usr/bin/env python
-import threading,time,queue
 import tqdm
 try:
 	from .par2deep import *
 except:
 	from par2deep import *
 try:
-	from .ask_yn import *
+	from .toolbox import ask_yn
 except:
-	from ask_yn import *
+	from toolbox import ask_yn
 
 def displong(lst,q=False):
 	x = 0

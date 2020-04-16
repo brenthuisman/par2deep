@@ -27,10 +27,10 @@ def main():
           license='LGPL',
           include_package_data=True,
           zip_safe=False,
-          install_requires=['tqdm','configargparse','Send2Trash'],
+          install_requires=['tqdm','configargparse','Send2Trash','PyQt5'],
           packages=['par2deep'],
           entry_points={
-              "console_scripts": ['par2deep = par2deep.gui_py:main', 'par2deep-cli = par2deep.cli:main'],
+              "console_scripts": ['par2deep = par2deep.gui_py:main', 'par2deep-tk = par2deep.gui_tk:main', 'par2deep-cli = par2deep.cli:main'],
           }
           )
 

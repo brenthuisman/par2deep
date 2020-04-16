@@ -3,10 +3,10 @@ from PyQt5.QtGui import QIcon,QStandardItemModel
 from PyQt5.QtCore import QSettings,Qt
 try:
 	from .par2deep import *
-	from .gui_helpers import *
+	from .toolbox import *
 except:
 	from par2deep import *
-	from gui_helpers import *
+	from toolbox import *
 
 
 class app_window(QMainWindow):
@@ -430,10 +430,10 @@ if __name__ == '__main__':
 	import sys
 	app = QApplication(sys.argv)
 	#print(QStyleFactory.keys())
-	try:
-		app.setStyle('Breeze')
-	except:
-		pass
+	#try:
+		#app.setStyle('Breeze')
+	#except:
+		#pass
 	mw = app_window()
 	mw.show()
 	sys.exit(app.exec_())
