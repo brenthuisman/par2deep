@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from setuptools import setup
 
-VERSION = '1.9.2'
+VERSION = '1.9.3'
 
 def main():
     setup(name='par2deep',

@@ -2,8 +2,12 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon,QStandardItemModel
 from PyQt5.QtCore import QSettings,Qt
-from par2deep import *
-from toolbox import *
+try:
+	from par2deep import *
+	from toolbox import *
+except:
+	from .par2deep import *
+	from .toolbox import *
 
 
 class app_window(QMainWindow):

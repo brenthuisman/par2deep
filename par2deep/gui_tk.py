@@ -4,8 +4,12 @@ from tkinter import *
 from tkinter.ttk import *
 from tkinter import Scale #new one sucks
 from tkinter import filedialog #old one dont work
-from par2deep import *
-from toolbox import startfile
+try:
+	from par2deep import *
+	from toolbox import startfile
+except:
+	from .par2deep import *
+	from .toolbox import startfile
 
 
 class CreateToolTip(object):
