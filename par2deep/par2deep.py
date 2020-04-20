@@ -280,7 +280,8 @@ class par2deep():
 						backupfile=f+".1"
 						if os.path.isfile(backupfile):
 							send2trash(backupfile)
-					repairedfiles.append([ f , retval ])
+				repairedfiles.append([ f , retval ])
+			
 			for f,retcode in self.verifiedfiles_err:
 				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
@@ -333,8 +334,7 @@ class par2deep():
 				for p in pars:
 					send2trash(p)
 				recreatedfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
-		
-		if self.len_verified_actions>0:
+			
 			for f,retcode in self.verifiedfiles_err:
 				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')

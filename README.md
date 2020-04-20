@@ -51,6 +51,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
+ * 2020-04-20: recreate verified_repairable creates backup. backups are shows upon init. orphans are shown upon init.
  * 2020-04-16: v1.9.3: Packaging still is a pain!
  * 2020-04-16: v1.9.0: GUI rewritten in with Qt (PyQt5). Open Issues should be solved for 2.0.0 release.
  * 2019-02-15: v1.0.5: Instead of deleting files (os.remove), now Send2Trash is used.
