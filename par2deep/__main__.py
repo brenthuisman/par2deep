@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import gui_qt
 
 if __name__ == '__main__':

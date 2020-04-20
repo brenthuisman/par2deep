@@ -1,4 +1,4 @@
-import sys,os,subprocess,re,glob
+import sys,os,subprocess,re,glob,shutil
 from configargparse import ArgParser
 from send2trash import send2trash
 
@@ -12,7 +12,7 @@ second, depending on overrides, propose actions and ask user confirmation
 	- verify if exist
 		- file and .par2
 		- override = no verify if .par2 exist
-	- remove unused .par2
+	- remove orphans .par2
 		- no file but .par2
 		- override = dont remove .par2 if no file
 third, execute user choices.
@@ -52,7 +52,7 @@ class par2deep():
 		parser.add_argument("-novfy", "--noverify", action='store_true', help="Do not verify existing files (default off).")
 		parser.add_argument("-keepor", "--keep_orphan", action='store_true', help="Keep orphaned par2 files.")
 		#parser.add_argument("-seppardir", "--separate_parity_directory", action='store_true', help="Store parity data in a subdirectory.")
-		parser.add_argument("-keepbu", "--keep_backup", action='store_true', help="Keep backups created by par2 (.1,.2 and so on).")
+		parser.add_argument("-clean", "--clean_backup", action='store_true', help="Remove backups created by par2 (.1,.2 and so on) from your file tree.")
 		parser.add_argument("-ex", "--excludes", action="append", type=str, default=[], help="Optionally excludes directories ('root' is files in the root of -dir).")
 		parser.add_argument("-exex", "--extexcludes", action="append", type=str, default=[], help="Optionally excludes file extensions.")
 		parser.add_argument("-dir", "--directory", type=str, default=current_data_dir, help="Path to protect (default is current directory).")
@@ -61,11 +61,13 @@ class par2deep():
 		parser.add_argument("-pcmd", "--par_cmd", type=str, default=par_cmd, help="Set path to alternative par2 command (default \"par2\").")
 		
 		#lets get a nice dict of all o' that.
+		#FIXME: catch unrecognized arguments
 		args = {k:v for k,v in vars(parser.parse_args()).items() if v is not None}
 		self.args = args
 
 		#add number of files
 		args["nr_parfiles"] = str(1) #number of parity files
+		self.max_keep_backups = 2 #par2 will increment if existing backups exist. lets not get the number of backups out of hand
 
 		#set that shit
 		for k,v in self.args.items():
@@ -106,13 +108,19 @@ class par2deep():
 		for ext in self.extexcludes:
 			allfiles = [f for f in allfiles if not f.endswith(ext)]
 
-		parrables = [f for f in allfiles if not f.endswith(".par2")]
+		backups_delete = []
+		backups_keep = [f for f in allfiles if f.endswith(tuple(['.'+str(i) for i in range(0,10)])) and f[:-2] in allfiles] #even though we wont create more backups than max_keep_backups, we'll check up to .9 for existence. we include .0, which is what par2deep created for verifiedfiles_repairable that was recreated anyway.
+		allfiles = [f for f in allfiles if f not in backups_keep] #update allfiles with the opposite.
+
+		parrables = [f for f in allfiles if not f.endswith((".par2",".par2deep_tmpfile"))]
 
 		pattern = '.+vol[0-9]+\+[0-9]+\.par2'
 		par2corrfiles = [f for f in allfiles if re.search(pattern, f)]
 		par2files = [f for f in allfiles if f.endswith(".par2") and not re.search(pattern, f)]
 
-		par2errcopies = [f for f in allfiles if f.endswith(".1") or f.endswith(".2")] #remove copies with errors fixed previously by par.
+		if self.clean_backup:
+			backups_delete = [i for i in backups_keep]
+			backups_keep = []
 
 		create = []
 		verify = []
@@ -137,27 +145,36 @@ class par2deep():
 				#one of them is missing but not both
 				incomplete.append(f)
 
-		unused = []
-		if not self.keep_orphan:
-			#print("Checking for unused par2 files ...")
-			for f in par2files:
-				if not os.path.isfile(f[:-5]):
-					unused.append(f)
-			for f in par2corrfiles:
-				if not os.path.isfile(f.split('.vol')[0]):
-					unused.append(f)
+		orphans_delete = []
+		orphans_keep = []
+		#print("Checking for orphans par2 files ...")
+		for f in par2files:
+			if not os.path.isfile(f[:-5]):
+				if self.keep_orphan:
+					orphans_keep.append(f)
+				else:
+					orphans_delete.append(f)
+		for f in par2corrfiles:
+			if not os.path.isfile(f.split('.vol')[0]):
+				if self.keep_orphan:
+					orphans_keep.append(f)
+				else:
+					orphans_delete.append(f)
+		backups_delete.extend([f for f in allfiles if f.endswith(".par2deep_tmpfile")])
 
 		self.create = sorted(create)
 		self.incomplete = sorted(incomplete)
 		self.verify = sorted(verify)
-		self.unused = sorted(unused)
-		self.par2errcopies = sorted(par2errcopies)
+		self.orphans_delete = sorted(orphans_delete)
+		self.backups_delete = sorted(backups_delete)
+		self.orphans_keep = sorted(orphans_keep)
+		self.backups_keep = sorted(backups_keep)
 
 		self.parrables = sorted(parrables)
 		self.par2corrfiles = sorted(par2corrfiles)
 		self.par2files = sorted(par2files)
 
-		self.len_all_actions = len(create) + len(incomplete) + len(verify) + len(unused) + len(par2errcopies)
+		self.len_all_actions = len(create) + len(incomplete) + len(verify) + len(orphans_delete) + len(backups_delete)
 
 		return
 
@@ -166,10 +183,10 @@ class par2deep():
 		create = self.create
 		incomplete = self.incomplete
 		verify = self.verify
-		unused = self.unused
+		orphans_delete = self.orphans_delete
+		backups_delete = self.backups_delete
 
 		create.extend(incomplete)
-		unused.extend(self.par2errcopies)
 
 		errorcodes = {
 			0: "Succes.", #can mean no error, but also succesfully repaired!
@@ -195,6 +212,7 @@ class par2deep():
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
 					send2trash(p)
+					#par2 does not delete preexisting parity data, so delete any possible data.
 				createdfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 			createdfiles_err=[ [i,j] for i,j in createdfiles if j != 0 and j != 100 ]
 
@@ -213,9 +231,19 @@ class par2deep():
 
 		removedfiles=[]
 		removedfiles_err=[]
-		if not self.keep_orphan and len(unused)>0:
+		if len(orphans_delete)>0:
 			#print('Removing ...')
-			for f in unused:
+			for f in orphans_delete:
+				yield f
+				if os.path.isfile(f): # so send2trash always succeeds and returns None
+					send2trash(f)
+					removedfiles.append([ f , 100 ])
+				else:
+					removedfiles.append([ f , 101 ])
+			removedfiles_err=[ [i,j] for i,j in removedfiles if j !=0 and j != 100 ]
+		if len(backups_delete)>0:
+			#print('Removing ...')
+			for f in backups_delete:
 				yield f
 				if os.path.isfile(f): # so send2trash always succeeds and returns None
 					send2trash(f)
@@ -247,8 +275,11 @@ class par2deep():
 				yield f
 				retval = self.runpar([self.par_cmd,"r",f])
 				if retval == 0:
-					if not self.keep_backup and os.path.isfile(f+".1"):
-						send2trash(f+".1")
+					if self.clean_backup:
+						#backups should just have been cleaned in the execute phase and therefore a .1 been created.
+						backupfile=f+".1"
+						if os.path.isfile(backupfile):
+							send2trash(backupfile)
 					repairedfiles.append([ f , retval ])
 			for f,retcode in self.verifiedfiles_err:
 				yield f
@@ -268,10 +299,43 @@ class par2deep():
 
 
 	def execute_recreate(self):
-		repairedfiles=[]
 		recreatedfiles=[]
+		# we recreate everything, including repairables. we do create a backup for the repairables
+		
 		if self.len_verified_actions>0:
-			for f,retcode in self.verifiedfiles_repairable+self.verifiedfiles_err:
+			for f,retcode in self.verifiedfiles_repairable:
+				yield f
+				if not self.clean_backup:
+					# first, copy the repairable file, we need it later
+					ftmp = f+".par2deep_tmpfile"
+					shutil.copyfile(f,ftmp)
+					# now that we have a backup of the repairable, repair to obtain the actual backup we want.
+					retval = self.runpar([self.par_cmd,"r",f])
+					if retval == 0:
+						# f is now the file we actually want to backup.
+						shutil.copyfile(f,f+".0") # will overwrite acc. to docs
+						# the last .[0-9] is the copy par2 just made, let's delete it.
+						for nbr in range(1,10):
+							# we dont know how many backups were on disk, up to 10 just in case
+							if not os.path.isfile(f+"."+str(nbr)):
+								# we overshot by 1
+								os.remove(f+"."+str(nbr-1))
+								break
+					elif retval != 0:
+						# making the backup failed, no need to move it. we don't report it anywhere, nothing we can do to handle.
+						# we made ftmp and did not rely on par2's backup in case the repair was attempted but failed.
+						# probably never happens, but you can never be too certain
+						pass
+					# regardless of retval, we put ftmp back to f. this is the file we want to recreate for.
+					os.replace(ftmp,f)
+				# same as verifiedfiles_err
+				pars = glob.glob(glob.escape(f)+'*.par2')
+				for p in pars:
+					send2trash(p)
+				recreatedfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
+		
+		if self.len_verified_actions>0:
+			for f,retcode in self.verifiedfiles_err:
 				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
@@ -280,9 +344,9 @@ class par2deep():
 
 		self.recreate = sorted(recreatedfiles)
 		self.recreate_err = sorted([f for f,err in recreatedfiles if err !=0])
-		self.fixes = sorted([f for f,err in repairedfiles if err ==0])
-		self.fixes_err = sorted([f for f,err in repairedfiles if err !=0])
+		self.fixes = []
+		self.fixes_err = []
 
-		self.len_all_err = self.len_all_err + len(self.recreate_err) + len(self.fixes_err)
+		self.len_all_err = self.len_all_err + len(self.recreate_err)
 
 		return

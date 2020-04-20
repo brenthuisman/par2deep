@@ -166,11 +166,11 @@ class app_frame(Frame):
 		cb3.pack(fill=X)
 		CreateToolTip(cb3,"Do not remove unused parity files (*.par*).")
 
-		self.args["keep_backup"] = IntVar()
-		self.args["keep_backup"].set(self.p2d.args["keep_backup"])
-		cb3 = Checkbutton(advset, text="Keep backup files", variable=self.args["keep_backup"])
+		self.args["clean_backup"] = IntVar()
+		self.args["clean_backup"].set(self.p2d.args["clean_backup"])
+		cb3 = Checkbutton(advset, text="Remove backup files", variable=self.args["clean_backup"])
 		cb3.pack(fill=X)
-		CreateToolTip(cb3,"Do not remove backup files (*.[0-9]).")
+		CreateToolTip(cb3,"Remove backup files (*.[0-9]).")
 
 		Label(advset, text="Exclude directories (comma separated)").pack(fill=X)
 		self.args["excludes"] = Entry(advset)
@@ -352,7 +352,7 @@ class app_frame(Frame):
 		self.p2d.args["overwrite"] = self.args["overwrite"].get() == 1
 		self.p2d.args["noverify"] = self.args["noverify"].get() == 1
 		self.p2d.args["keep_orphan"] = self.args["keep_orphan"].get() == 1
-		self.p2d.args["keep_backup"] = self.args["keep_backup"].get() == 1
+		self.p2d.args["clean_backup"] = self.args["clean_backup"].get() == 1
 		self.p2d.args["excludes"] = self.args["excludes"].get().split(',') if self.args["excludes"].get().split(',') != [''] else []
 		self.p2d.args["extexcludes"] = self.args["extexcludes"].get().split(',') if self.args["extexcludes"].get().split(',') != [''] else []
 		self.p2d.args["directory"] = os.path.abspath(self.args["directory"].get())

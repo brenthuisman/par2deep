@@ -90,10 +90,10 @@ class app_window(QMainWindow):
 		cb3.setToolTip("Do not remove unused parity files (*.par*).")
 		cb3.stateChanged.connect(lambda fldval : self.p2d.args.update({"keep_orphan":bool(fldval)}))
 		
-		cb4 = QCheckBox("Keep backup files")
-		cb4.setChecked(self.p2d.args["keep_backup"])
-		cb4.setToolTip("Do not remove backup files (*.[0-9]).")
-		cb4.stateChanged.connect(lambda fldval : self.p2d.args.update({"keep_backup":bool(fldval)}))
+		cb4 = QCheckBox("Remove backup files")
+		cb4.setChecked(self.p2d.args["clean_backup"])
+		cb4.setToolTip("Remove backup files (*.[0-9]).")
+		cb4.stateChanged.connect(lambda fldval : self.p2d.args.update({"clean_backup":bool(fldval)}))
 		
 		ex_lb = QLabel("Exclude directories (comma separated):")
 		ex_fld = QLineEdit(','.join(self.p2d.args["excludes"]))
@@ -199,7 +199,7 @@ class app_window(QMainWindow):
 		l = QVBoxLayout()
 		l.addStretch(1)
 		if hasattr(self.p2d,'len_all_err'):
-			l.addWidget(QLabel("There were "+str(self.p2d.len_all_err)+" errors."))
+			l.addWidget(QLabel("There were "+str(self.p2d.len_all_err)+" errors, of which "+str(len(self.p2d.fixes))+" succesfully fixed."))
 		l.addWidget(b)
 		l.addStretch(1)
 		subframe.setLayout(l)
@@ -327,10 +327,12 @@ class app_window(QMainWindow):
 				return
 			dispdict = {
 				'create' : 'Create parity files',
-				'incomplete' : 'Replace parity files',
+				'incomplete' : 'Incomplete parity data found. Create new parity files',
 				'verify' : 'Verify files',
-				'unused' : 'Remove these unused files',
-				'par2errcopies' : 'Remove old repair files'
+				'orphans_delete' : 'Remove these orphaned files',
+				'orphans_keep' : 'Keep these orphaned files',
+				'backups_delete' : 'Remove old backup files',
+				'backups_keep' : 'Keep these backup files'
 				}
 			self.new_window(self.topbar_frame(1), self.scrollable_treeview_frame(dispdict), self.execute_actions_frame())
 		
@@ -425,14 +427,9 @@ class app_window(QMainWindow):
 		return subframe
 
 
-
 def main():
 	app = QApplication(sys.argv)
-	#print(QStyleFactory.keys())
-	#try:
-		#app.setStyle('Breeze')
-	#except:
-		#pass
+	#app.setStyle('Breeze')
 	mw = app_window()
 	mw.show()
 	sys.exit(app.exec_())

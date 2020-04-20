@@ -26,13 +26,14 @@ def ask_yn(question, default="yes"):
 			print("Please respond with 'yes' or 'no' (or 'y' or 'n').")
 
 
-def startfile(fname): #not really gui related...
+def startfile(fname):
 	fname = os.path.normpath(fname)
-	if os.path.isfile(fname): #otherwise its probably a category in the treeview
+	if os.path.isfile(fname):
 		if sys.platform == 'win32':
 			os.startfile(fname)
 		elif sys.platform == 'linux':
 			os.system("nohup xdg-open \""+fname+"\" >/dev/null 2>&1 &")
+		# TODO macos?
 	return
 
 
@@ -79,7 +80,6 @@ class BSlider(QWidget):
 
 	def changeValue(self,v):
 		self.value = v
-		# print(self.title.text(),v)
 		try:
 			self.vallabel.setText(str(v))
 		except:
@@ -95,7 +95,6 @@ class progress_thread(QThread):
 		self.iterable_func = iterable_func
 	def run(self):
 		cnt = 0
-		#for i in self.p2d.execute_recreate():
 		for i in getattr(self.p2d, self.iterable_func)():
 			cnt+=1
 			currentfile = i

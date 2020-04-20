@@ -12,17 +12,18 @@ I use `par2deep` to secure my photos and music across drives, machines and opera
 
 ## Install
 
-You can now use pip!
+You can now use pip! Make sure to update pip before installation (PyQt5 won't install without a recent pip).
 
-    $ pip(3) install par2deep (--user)
+    $ pip(3) install -U pip
+    $ pip(3) install par2deep --user
 
 Or clone/download this repo and install manually with:
 
-    $ python(3) setup.py install (--user)
+    $ python(3) setup.py install --user
 
 Or run directly with:
 
-    $ python par2deep
+    $ python(3) par2deep
 
 Alternatively, if you have installed the `cx_Freeze` package, you can generate an msi package for Windows. Adapt `setup_cx.py` to suit your needs (include the `par2` executable and, most importantly, the icon of your choice) and then build the `.msi` file in `/dist`:
 
