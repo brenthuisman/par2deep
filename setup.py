@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from setuptools import setup
 
-VERSION = '1.9.3'
+VERSION = '1.9.4'
 
 def main():
     setup(name='par2deep',
@@ -22,13 +22,14 @@ def main():
           ],
           keywords='par2 file integrity',
           author='Brent Huisman',
-          author_email='mail@brenthuisman.net',
+          author_email='brent@huisman.pl',
           url='https://github.com/brenthuisman/par2deep',
           license='LGPL',
           include_package_data=True,
           zip_safe=False,
           install_requires=['tqdm','configargparse','Send2Trash','PyQt5'],
           packages=['par2deep'],
+          package_data={'': ['libpar2.so','libpar2.dll']},
           entry_points={
               "console_scripts": ['par2deep = par2deep.gui_qt:main', 'par2deep-tk = par2deep.gui_tk:main', 'par2deep-cli = par2deep.cli:main'],
           }

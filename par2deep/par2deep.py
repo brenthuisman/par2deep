@@ -1,4 +1,4 @@
-import sys,os,subprocess,re,glob,shutil
+import sys,struct,ctypes,os,subprocess,re,glob,shutil
 from configargparse import ArgParser
 from send2trash import send2trash
 
@@ -24,21 +24,20 @@ fifth, final report.
 class par2deep():
 	def __init__(self,chosen_dir=None):
 		#CMD arguments and configfile
+
+		self.shell=False
+		self.par_cmd = 'par2'
 		if sys.platform == 'win32':
-			self.shell=True
+			self.shell=True #shell true because otherwise pythonw.exe pops up a cmd.exe for EVERY file.
 			locs = [os.path.join(sys.path[0],'phpar2.exe'),
 					'phpar2.exe',
 					os.path.join(sys.path[0],'par2.exe'),
 					'par2.exe',
 					]
-			par_cmd = 'par2'
 			for p in locs:
 				if os.path.isfile(p):
-					par_cmd = p
+					self.par_cmd = p
 					break
-		else:
-			self.shell=False
-			par_cmd = 'par2'
 
 		if chosen_dir == None or not os.path.isdir(chosen_dir):
 			current_data_dir = os.getcwd()
@@ -58,7 +57,7 @@ class par2deep():
 		parser.add_argument("-dir", "--directory", type=str, default=current_data_dir, help="Path to protect (default is current directory).")
 		#parser.add_argument("-pardir", "--parity_directory", type=str, default=os.getcwd(), help="Path to parity data store (default is current directory).")
 		parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
-		parser.add_argument("-pcmd", "--par_cmd", type=str, default=par_cmd, help="Set path to alternative par2 command (default \"par2\").")
+		parser.add_argument("-pcmd", "--par_cmd", type=str, default=self.par_cmd, help="Set path to alternative par2 command (default \"par2\").")
 		
 		#lets get a nice dict of all o' that.
 		#FIXME: catch unrecognized arguments
@@ -76,16 +75,25 @@ class par2deep():
 		return
 
 
-	def runpar(self,command):
-		devnull = open(os.devnull, 'wb')
-		#shell true because otherwise pythonw.exe pops up a cmd.exe for EVERY file.
-		try:
-			subprocess.check_call(command,shell=self.shell,stdout=devnull,stderr=devnull)
-			return 0
-		except subprocess.CalledProcessError as e:
-			return e.returncode
-		except FileNotFoundError:
-			return 200
+	def runpar(self,command=""):
+		if self.fallback:
+			cmdcommand = [self.par_cmd]
+			cmdcommand.extend(command)
+			devnull = open(os.devnull, 'wb')
+			try:
+				subprocess.check_call(cmdcommand,shell=self.shell,stdout=devnull,stderr=devnull)
+				return 0
+			except subprocess.CalledProcessError as e:
+				return e.returncode
+			except FileNotFoundError:
+				return 200
+		else:
+			def strlist2charpp(stringlist):
+				argc = len(stringlist)
+				Args = ctypes.c_char_p * (len(stringlist)+1)
+				argv = Args(*[ctypes.c_char_p(arg.encode("utf-8")) for arg in stringlist])
+				return argc,argv
+			return self.libpar2.par2cmdline(*strlist2charpp(command))
 
 
 	def check_state(self):
@@ -94,7 +102,40 @@ class par2deep():
 			setattr(self, k, v)
 		self.percentage = str(self.percentage)
 		
-		if self.runpar([self.par_cmd]) == 200:
+		#we provide a win64 and lin64 library, use if on those platforms, otherwise fallback to par_cmd, and check if that is working
+		self.fallback = True
+		_void_ptr_size = struct.calcsize('P')
+		bit64 = _void_ptr_size * 8 == 64
+		
+		if bit64:
+			windows = 'win32' in str(sys.platform).lower()
+			linux = 'linux' in str(sys.platform).lower()
+			macos = 'darwin' in str(sys.platform).lower()
+			this_script_dir = os.path.dirname(os.path.abspath(__file__))
+			if windows:
+				try:
+					os.add_dll_directory(this_script_dir) #needed on python3.8 on win
+				except:
+					pass #not available or necesary on py37 and before
+				try:
+					self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.dll"))
+					self.fallback = False
+				except:
+					self.fallback = True
+			elif linux:
+				try:
+					self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.so"))
+					self.fallback = False
+				except:
+					self.fallback = True
+			elif macos:
+				pass #TODO if possible
+			else:
+				pass
+		else:
+			pass
+		
+		if self.fallback and self.runpar() == 200:
 			return 200
 			#if 200, then par2 doesnt exist.
 
@@ -213,7 +254,7 @@ class par2deep():
 				for p in pars:
 					send2trash(p)
 					#par2 does not delete preexisting parity data, so delete any possible data.
-				createdfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
+				createdfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 			createdfiles_err=[ [i,j] for i,j in createdfiles if j != 0 and j != 100 ]
 
 		verifiedfiles=[]
@@ -224,7 +265,7 @@ class par2deep():
 			#print('Verifying ...')
 			for f in verify:
 				yield f
-				verifiedfiles.append([ f , self.runpar([self.par_cmd,"v",f]) ])
+				verifiedfiles.append([ f , self.runpar(["v",f]) ])
 			verifiedfiles_err=[ [i,j] for i,j in verifiedfiles if j != 0 and j != 100 and j != 1 ]
 			verifiedfiles_repairable=[ [i,j] for i,j in verifiedfiles if j == 1 ]
 			verifiedfiles_succes=[ [i,j] for i,j in verifiedfiles if j == 0 ]
@@ -273,7 +314,7 @@ class par2deep():
 		if self.len_verified_actions>0:
 			for f,retcode in self.verifiedfiles_repairable:
 				yield f
-				retval = self.runpar([self.par_cmd,"r",f])
+				retval = self.runpar(["r",f])
 				if retval == 0:
 					if self.clean_backup:
 						#backups should just have been cleaned in the execute phase and therefore a .1 been created.
@@ -287,7 +328,7 @@ class par2deep():
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
 					send2trash(p)
-				recreatedfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
+				recreatedfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 
 		self.recreate = sorted(recreatedfiles)
 		self.recreate_err = sorted([f for f,err in recreatedfiles if err !=0])
@@ -311,7 +352,7 @@ class par2deep():
 					ftmp = f+".par2deep_tmpfile"
 					shutil.copyfile(f,ftmp)
 					# now that we have a backup of the repairable, repair to obtain the actual backup we want.
-					retval = self.runpar([self.par_cmd,"r",f])
+					retval = self.runpar(["r",f])
 					if retval == 0:
 						# f is now the file we actually want to backup.
 						shutil.copyfile(f,f+".0") # will overwrite acc. to docs
@@ -333,14 +374,14 @@ class par2deep():
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
 					send2trash(p)
-				recreatedfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
+				recreatedfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 			
 			for f,retcode in self.verifiedfiles_err:
 				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
 				for p in pars:
 					send2trash(p)
-				recreatedfiles.append([ f , self.runpar([self.par_cmd,"c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
+				recreatedfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 
 		self.recreate = sorted(recreatedfiles)
 		self.recreate_err = sorted([f for f,err in recreatedfiles if err !=0])

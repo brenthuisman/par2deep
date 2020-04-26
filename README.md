@@ -4,6 +4,8 @@ Analogous to the various *deep commands (md5deep, hashdeep...) this tool serves 
 
 This tool will generate one parity file (plus a file for the recovery blocks) per file that you protect. This makes it simple to move files if you change your mind on how your file tree must be organized. Just move the `par2` files along.
 
+On Windows and Linux 64bit platforms, a compiled [libpar2](https://github.com/brenthuisman/libpar2) is provided and no external `par2` required.
+
 ## Motivation
 
 I chose to use the old but well tested and well known `par2` program to base this tool on, instead of similar tools such as `zfec`, `rsbep` or something like `pyFileFixity`. Some recent forks of `par2` have added recursive scanning abilities, but they're generally not cross-platform. They also do not offer an interactive way of diagnosing (parts of) your file tree, and different problem handling for different areas of your file tree.
@@ -12,22 +14,24 @@ I use `par2deep` to secure my photos and music across drives, machines and opera
 
 ## Install
 
-You can now use pip! Make sure to update pip before installation (PyQt5 won't install without a recent pip).
+You can now use pip! Make sure to update pip before installation (PyQt5 won't install without a recent pip). On Windows, you make have to run `python` for `python3` and `pip` for `pip3`.
 
-    $ pip(3) install -U pip
-    $ pip(3) install par2deep --user
+    $ pip3 install -U pip
+    $ pip3 install par2deep --user
 
 Or clone/download this repo and install manually with:
 
-    $ python(3) setup.py install --user
+    $ python3 setup.py install --user
 
 Or run directly with:
 
-    $ python(3) par2deep
+    $ python3 par2deep
 
 Alternatively, if you have installed the `cx_Freeze` package, you can generate an msi package for Windows. Adapt `setup_cx.py` to suit your needs (include the `par2` executable and, most importantly, the icon of your choice) and then build the `.msi` file in `/dist`:
 
-    $ python setup_cx.py bdist_msi
+    $ python3 setup_cx.py bdist_msi
+    
+Note this has not been tested since v1.0.5!
 
 ## Usage
 
@@ -47,10 +51,11 @@ Example `par2deep.ini`:
  * configargparse
  * Send2Trash
  * PyQt5
- * `par2` in path or specify a tool with the same interface.
+ * Optional, if you are not on Windows or Linux 64bit, `par2` in path or specify with `par_cmd`.
 
 ### Changelog
 
+ * 2020-04-26: Include libpar2 for win64 and lin64 platforms, no external `par2` needed anymore.
  * 2020-04-20: recreate verified_repairable creates backup. backups are shows upon init. orphans are shown upon init.
  * 2020-04-16: v1.9.3: Packaging still is a pain!
  * 2020-04-16: v1.9.0: GUI rewritten in with Qt (PyQt5). Open Issues should be solved for 2.0.0 release.

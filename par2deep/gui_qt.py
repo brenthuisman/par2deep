@@ -105,9 +105,9 @@ class app_window(QMainWindow):
 		exex_fld.setToolTip("These extensions will be excluded from the analysis.")
 		exex_fld.textChanged.connect(lambda fldval : self.p2d.args.update({"extexcludes":fldval.split(',')}))
 		
-		parpath_lb = QLabel("Path to par2(.exe):")
+		parpath_lb = QLabel("Fallback path to par2(.exe):")
 		parpath_fld = QLineEdit(self.p2d.args["par_cmd"])
-		parpath_fld.setToolTip("Should be set automatically and correctly, but can be overridden.")
+		parpath_fld.setToolTip("If you don't use Windows or Linux 64bit, and par2 is not in PATH, par2deep will fallback to using this command.")
 		parpath_fld.textChanged.connect(lambda fldval : self.p2d.args.update({"par_cmd":fldval}))
 		
 		perc_sldr = BSlider("Percentage of protection",5,100,lambda fldval : self.p2d.args.update({"percentage":fldval}),self.p2d.args["percentage"])
