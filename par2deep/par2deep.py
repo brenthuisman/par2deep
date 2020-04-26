@@ -1,6 +1,6 @@
 import sys,struct,ctypes,os,subprocess,re,glob,shutil
 from configargparse import ArgParser
-from send2trash import send2trash
+from Send2Trash import send2trash
 
 '''
 first, init disk state.

@@ -1,22 +1,15 @@
 from cx_Freeze import setup, Executable
 import sys,os.path,glob
 
-VERSION = '1.9.0'
+VERSION = '1.9.4'
 NAME = 'par2deep'
 DESCRIPTION = "Produce, verify and repair par2 files recursively."
 
-PYTHON_INSTALL_DIR = os.path.dirname(os.path.dirname(os.__file__))
-#os.environ['TCL_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tcl8.6')
-#os.environ['TK_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tk8.6')
-
 exe_options = {
 	'include_files':[
-		#os.path.join(PYTHON_INSTALL_DIR, 'DLLs', 'tk86t.dll'),
-		#os.path.join(PYTHON_INSTALL_DIR, 'DLLs', 'tcl86t.dll'),
-		'phpar2.exe',
 		NAME+'.ico',
-		] + glob.glob("par2deep/*.py"),
-	'packages': ["configargparse","PyQt5.QtCore","PyQt5.QtGui", "PyQt5.QtWidgets", "Send2Trash", "tqdm"], #adding tqdm causes every installed pip package to be included...
+		] + glob.glob("par2deep/*.py") + glob.glob("par2deep/libpar2.*"),
+	'packages': ["configargparse","pyqt5", "Send2Trash", "tqdm"], #adding tqdm causes every installed pip package to be included...
 }
 
 shortcut_table = [

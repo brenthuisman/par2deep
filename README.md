@@ -27,11 +27,9 @@ Or run directly with:
 
     $ python3 par2deep
 
-Alternatively, if you have installed the `cx_Freeze` package, you can generate an msi package for Windows. Adapt `setup_cx.py` to suit your needs (include the `par2` executable and, most importantly, the icon of your choice) and then build the `.msi` file in `/dist`:
+Alternatively, if you have installed the `cx_Freeze` package, you can generate an msi package for Windows. Adapt `setup_cx.py` to suit your needs (most importantly, the icon of your choice) and then build the `.msi` file in `/dist`:
 
     $ python3 setup_cx.py bdist_msi
-    
-Note this has not been tested since v1.0.5!
 
 ## Usage
 
