@@ -27,21 +27,6 @@ fifth, final report.
 class par2deep():
 	def __init__(self,chosen_dir=None):
 		#CMD arguments and configfile
-
-		self.shell=False
-		self.par_cmd = 'par2'
-		if sys.platform == 'win32':
-			self.shell=True #shell true because otherwise pythonw.exe pops up a cmd.exe for EVERY file.
-			locs = [os.path.join(sys.path[0],'phpar2.exe'),
-					'phpar2.exe',
-					os.path.join(sys.path[0],'par2.exe'),
-					'par2.exe',
-					]
-			for p in locs:
-				if os.path.isfile(p):
-					self.par_cmd = p
-					break
-
 		if chosen_dir == None or not os.path.isdir(chosen_dir):
 			current_data_dir = os.getcwd()
 			parser = ArgParser(default_config_files=['par2deep.ini', '~/.par2deep'])
@@ -60,26 +45,27 @@ class par2deep():
 		parser.add_argument("-dir", "--directory", type=str, default=current_data_dir, help="Path to protect (default is current directory).")
 		#parser.add_argument("-pardir", "--parity_directory", type=str, default=os.getcwd(), help="Path to parity data store (default is current directory).")
 		parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
-		parser.add_argument("-pcmd", "--par_cmd", type=str, default=self.par_cmd, help="Set path to alternative par2 command (default \"par2\").")
+		parser.add_argument("-pcmd", "--par_cmd", type=str, default="", help="Set path to alternative par2 executable (default \"par2\").")
 		
 		#lets get a nice dict of all o' that.
 		#FIXME: catch unrecognized arguments
 		args = {k:v for k,v in vars(parser.parse_args()).items() if v is not None}
-		self.args = args
-
-		#add number of files
 		args["nr_parfiles"] = str(1) #number of parity files
-		self.max_keep_backups = 2 #par2 will increment if existing backups exist. lets not get the number of backups out of hand
-
+		
 		#set that shit
-		for k,v in self.args.items():
-			setattr(self, k, v)
-
+		self.args = args
 		return
 
 
 	def runpar(self,command=""):
-		if self.fallback:
+		if self.libpar2_works:
+			def strlist2charpp(stringlist):
+				argc = len(stringlist)
+				Args = ctypes.c_char_p * (len(stringlist)+1)
+				argv = Args(*[ctypes.c_char_p(arg.encode("utf-8")) for arg in stringlist])
+				return argc,argv
+			return self.libpar2.par2cmdline(*strlist2charpp(command))
+		else:
 			cmdcommand = [self.par_cmd]
 			cmdcommand.extend(command)
 			devnull = open(os.devnull, 'wb')
@@ -90,55 +76,61 @@ class par2deep():
 				return e.returncode
 			except FileNotFoundError:
 				return 200
-		else:
-			def strlist2charpp(stringlist):
-				argc = len(stringlist)
-				Args = ctypes.c_char_p * (len(stringlist)+1)
-				argv = Args(*[ctypes.c_char_p(arg.encode("utf-8")) for arg in stringlist])
-				return argc,argv
-			return self.libpar2.par2cmdline(*strlist2charpp(command))
 
 
 	def check_state(self):
-		#set that shit if changed in gui
 		for k,v in self.args.items():
 			setattr(self, k, v)
-		self.percentage = str(self.percentage)
+		self.percentage = str(self.args["percentage"])
 		
 		#we provide a win64 and lin64 library, use if on those platforms, otherwise fallback to par_cmd, and check if that is working
-		self.fallback = True
 		_void_ptr_size = struct.calcsize('P')
 		bit64 = _void_ptr_size * 8 == 64
+		windows = 'win32' in str(sys.platform).lower()
+		linux = 'linux' in str(sys.platform).lower()
+		macos = 'darwin' in str(sys.platform).lower()
 		
-		if bit64:
-			windows = 'win32' in str(sys.platform).lower()
-			linux = 'linux' in str(sys.platform).lower()
-			macos = 'darwin' in str(sys.platform).lower()
-			this_script_dir = os.path.dirname(os.path.abspath(__file__))
-			if windows:
-				try:
-					os.add_dll_directory(this_script_dir) #needed on python3.8 on win
-				except:
-					pass #not available or necesary on py37 and before
-				try:
-					self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.dll"))
-					self.fallback = False
-				except:
-					self.fallback = True
-			elif linux:
-				try:
-					self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.so"))
-					self.fallback = False
-				except:
-					self.fallback = True
-			elif macos:
-				pass #TODO if possible
-			else:
-				pass
+		self.shell=False
+		if windows:
+			self.shell=True #shell true because otherwise pythonw.exe pops up a window for every par2 action!
+		
+		self.libpar2_works = False
+		if os.path.isfile(self.args["par_cmd"]):
+			self.par_cmd = self.args["par_cmd"]
 		else:
-			pass
-		
-		if self.fallback and self.runpar() == 200:
+			#pcmd not set by user, so lets see if we can use libpar2
+			if bit64:
+				this_script_dir = os.path.dirname(os.path.abspath(__file__))
+				if windows:
+					try:
+						os.add_dll_directory(this_script_dir) #needed on python3.8 on win
+					except:
+						pass #not available or necesary on py37 and before
+					try:
+						self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.dll"))
+						self.libpar2_works = True
+					except:
+						pass
+				elif linux:
+					try:
+						self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.so"))
+						self.libpar2_works = True
+					except:
+						pass
+				elif macos:
+					pass #TODO, hope somebody can contribute
+				else: #otheros
+					pass
+			else: #bit32
+				pass
+			if self.libpar2_works == False:
+				#use par2 in path.
+				if windows:
+					self.par_cmd = 'par2.exe'
+				else:
+					self.par_cmd = 'par2'
+		# now test
+		if not self.libpar2_works and self.runpar() == 200:
 			return 200
 			#if 200, then par2 doesnt exist.
 
