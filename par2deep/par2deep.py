@@ -1,6 +1,9 @@
 import sys,struct,ctypes,os,subprocess,re,glob,shutil
 from configargparse import ArgParser
-from Send2Trash import send2trash
+try:
+	from Send2Trash import send2trash
+except:
+	from send2trash import send2trash #package name seem case sensitive. sometimes...
 
 '''
 first, init disk state.

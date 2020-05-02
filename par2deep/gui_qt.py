@@ -1,4 +1,4 @@
-import sys
+import sys,os
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon,QStandardItemModel
 from PyQt5.QtCore import QSettings,Qt
@@ -19,7 +19,18 @@ class app_window(QMainWindow):
 		self.setWindowIcon(QIcon('../par2deep.ico'))
 		self.guisettings = QSettings("BrentH", "par2deep")
 		
-		self.new_window(self.topbar_frame(0), self.start_options_frame(), self.start_actions_frame())
+		geometry = self.guisettings.value("geometry", self.saveGeometry())
+		lastdir = self.guisettings.value("lastdir", os.path.expanduser("~"))
+		
+		self.restoreGeometry(geometry)
+		
+		self.new_window(self.topbar_frame(0), self.start_options_frame(lastdir), self.start_actions_frame())
+
+
+	def closeEvent(self, event):
+		geometry = self.saveGeometry()
+		self.guisettings.setValue('geometry', geometry)
+		super().closeEvent(event)
 
 
 	def new_window(self,t,m,b):
@@ -56,6 +67,7 @@ class app_window(QMainWindow):
 		
 		def pickdir():
 			new_dirname = str(QFileDialog.getExistingDirectory(self, 'Set directory in which to protect data'))
+			self.guisettings.setValue("lastdir", new_dirname)
 			self.new_window(self.topbar_frame(0), self.start_options_frame(new_dirname), self.start_actions_frame())
 			
 		pickdir_btn = QPushButton("Pick directory")
