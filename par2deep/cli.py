@@ -45,8 +45,10 @@ def main():
 	disp10(p2d.incomplete,p2d.quiet)
 	print('Will verify',len(p2d.verify),'par2 files.')
 	disp10(p2d.verify,p2d.quiet)
-	print('Will remove',len(p2d.unused),'unused par2 files.')
-	disp10(p2d.unused,p2d.quiet)
+	print('Will remove',len(p2d.orphans_delete),'orphaned par2 files.')
+	disp10(p2d.orphans_delete,p2d.quiet)
+	print('Will remove',len(p2d.backups_delete),'backup files.')
+	disp10(p2d.backups_delete,p2d.quiet)
 	print('Will remove',len(p2d.par2errcopies),'old repair files.')
 	disp10(p2d.par2errcopies,p2d.quiet)
 

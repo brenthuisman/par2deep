@@ -14,22 +14,22 @@ I use `par2deep` to secure my photos and music across drives, machines and opera
 
 ## Install
 
-You can now use pip! Make sure to update pip before installation (PyQt5 won't install without a recent pip). On Windows, you make have to run `python` for `python3` and `pip` for `pip3`.
+If you have Python installed, you can use pip! Make sure to update pip before installation (PyQt5 won't install without a recent pip). On Windows, you may have to run `python` for `python3` and `pip` for `pip3`.
 
     $ pip3 install -U pip
     $ pip3 install par2deep --user
+    
+If you use Windows, and do not have Python installed, you can grab an installer [here](https://github.com/brenthuisman/par2deep/releases). These msi packages are generated created with the `cx_Freeze` package using the `setup_cx.py` script:
 
-Or clone/download this repo and install manually with:
+    $ python3 setup_cx.py bdist_msi
+
+Alternatively, clone/download this repo and install:
 
     $ python3 setup.py install --user
 
-Or run directly with:
+Or run directly:
 
     $ python3 par2deep
-
-Alternatively, if you have installed the `cx_Freeze` package, you can generate an msi package for Windows. Adapt `setup_cx.py` to suit your needs (most importantly, the icon of your choice) and then build the `.msi` file in `/dist`:
-
-    $ python3 setup_cx.py bdist_msi
 
 ## Usage
 
@@ -53,7 +53,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
- * 2020-04-26: Include libpar2 for win64 and lin64 platforms, no external `par2` needed anymore.
+ * 2020-04-26: v1.9.4: Include libpar2 for win64 and lin64 platforms, no external `par2` needed anymore.
  * 2020-04-20: recreate verified_repairable creates backup. backups are shows upon init. orphans are shown upon init.
  * 2020-04-16: v1.9.3: Packaging still is a pain!
  * 2020-04-16: v1.9.0: GUI rewritten in with Qt (PyQt5). Open Issues should be solved for 2.0.0 release.
