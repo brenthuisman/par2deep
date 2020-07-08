@@ -31,7 +31,10 @@ def disp10(lst,q=False):
 def main():
 	p2d = par2deep()
 
-	print("Using",p2d.par_cmd,"...")
+	try:
+		print("Using",p2d.par_cmd,"...")
+	except:
+		pass
 	print("Looking for files in",p2d.directory,"...")
 	
 	if p2d.check_state() == 200:
