@@ -1,4 +1,7 @@
 import gui_qt
 
 if __name__ == '__main__':
-    gui_qt.main()
+	if 'DISPLAY' in os.environ:
+		gui_qt.main()
+	else:
+		cli.main()
