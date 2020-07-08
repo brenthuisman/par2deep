@@ -1,4 +1,4 @@
-import gui_qt
+import os,gui_qt,cli
 
 if __name__ == '__main__':
 	if 'DISPLAY' in os.environ:
