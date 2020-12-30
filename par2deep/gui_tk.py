@@ -275,14 +275,14 @@ class app_frame(Frame):
 				self.cnt+=1
 				self.currentfile = i
 			dispdict = {
-				'verifiedfiles_succes' : 'Verified and in order',
+				'verifiedfiles_success' : 'Verified and in order',
 				'createdfiles' : 'Newly created parity files',
 				'removedfiles' : 'Files removed',
 				'createdfiles_err' : 'Errors during creating parity files',
 				'removedfiles_err' : 'Errors during file removal',
-				'fixes' : 'Verified files succesfully fixed',
+				'fixes' : 'Verified files successfully fixed',
 				'fixes_err' : 'Verified files failed to fix',
-				'recreate' : 'Succesfully recreated (overwritten) parity files',
+				'recreate' : 'Successfully recreated (overwritten) parity files',
 				'recreate_err' : 'Failed (overwritten) new parity files'
 				}
 			self.new_window(self.topbar_frame(5), self.scrollable_treeview_frame(dispdict), self.exit_actions_frame())
@@ -316,14 +316,14 @@ class app_frame(Frame):
 				self.cnt+=1
 				self.currentfile = i
 			dispdict = {
-				'verifiedfiles_succes' : 'Verified and in order',
+				'verifiedfiles_success' : 'Verified and in order',
 				'createdfiles' : 'Newly created parity files',
 				'removedfiles' : 'Files removed',
 				'createdfiles_err' : 'Errors during creating parity files',
 				'removedfiles_err' : 'Errors during file removal',
-				'fixes' : 'Verified files succesfully fixed',
+				'fixes' : 'Verified files successfully fixed',
 				'fixes_err' : 'Verified files failed to fix',
-				'recreate' : 'Succesfully recreated (overwritten) parity files',
+				'recreate' : 'Successfully recreated (overwritten) parity files',
 				'recreate_err' : 'Failed (overwritten) new parity files'
 				}
 			self.new_window(self.topbar_frame(5), self.scrollable_treeview_frame(dispdict), self.exit_actions_frame())
@@ -359,24 +359,27 @@ class app_frame(Frame):
 		self.p2d.args["par_cmd"] = str(self.args["par_cmd"].get())
 		self.p2d.args["percentage"] = str(int(self.args["percentage"].get()))
 
-		#go to second frame
-		self.new_window(self.topbar_frame(0), self.blank_frame(), self.progress_indef_frame())
-		self.update()
-		def run():
-			if self.p2d.check_state() == 200:
-				self.new_window(self.topbar_frame(0), self.exit_frame(), self.exit_actions_frame())
-				return
-			dispdict = {
-				'create' : 'Create parity files',
-				'incomplete' : 'Replace parity files',
-				'verify' : 'Verify files',
-				'unused' : 'Remove these unused files',
-				'par2errcopies' : 'Remove old repair files'
-				}
-			self.new_window(self.topbar_frame(1), self.scrollable_treeview_frame(dispdict), self.execute_actions_frame())
-		thread = threading.Thread(target=run)
-		thread.daemon = True
-		thread.start()
+		if self.p2d.init_par_cmd() == errorcodes.NOTFOUND:
+			self.new_window(self.topbar_frame(0), self.exit_frame(), self.exit_actions_frame())
+			self.update()
+			return
+		else:
+			#go to second frame
+			self.new_window(self.topbar_frame(0), self.blank_frame(), self.progress_indef_frame())
+			self.update()
+			def run():
+				self.p2d.set_state()
+				dispdict = {
+					'create' : 'Create parity files',
+					'incomplete' : 'Replace parity files',
+					'verify' : 'Verify files',
+					'unused' : 'Remove these unused files',
+					'par2errcopies' : 'Remove old repair files'
+					}
+				self.new_window(self.topbar_frame(1), self.scrollable_treeview_frame(dispdict), self.execute_actions_frame())
+			thread = threading.Thread(target=run)
+			thread.daemon = True
+			thread.start()
 		return
 
 
@@ -392,7 +395,7 @@ class app_frame(Frame):
 				self.cnt+=1
 				self.currentfile = i
 			dispdict = {
-				'verifiedfiles_succes' : 'Verified and in order',
+				'verifiedfiles_success' : 'Verified and in order',
 				'createdfiles' : 'Newly created parity files',
 				'removedfiles' : 'Files removed',
 				'createdfiles_err' : 'Errors during creating parity files',
@@ -435,7 +438,7 @@ class app_frame(Frame):
 		tree.column("action", width=60, stretch=False)
 		tree.column("fname", stretch=True)
 		tree.heading("fname", text="Filename")
-		
+
 
 		def doubleclick_tree(event):
 			startfile(tree.item(tree.selection()[0],"values")[0])

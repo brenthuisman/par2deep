@@ -36,10 +36,12 @@ def main():
 	except:
 		pass
 	print("Looking for files in",p2d.directory,"...")
-	
-	if p2d.check_state() == 200:
+
+	if p2d.init_par_cmd() == errorcodes.NOTFOUND:
 		print("The par2 command you specified is invalid.")
 		return 1
+	else:
+		p2d.set_state()
 
 	print("==========================================================")
 	print('Will create',len(p2d.create),'new par2 files.')
@@ -66,8 +68,8 @@ def main():
 			pbar.set_postfix_str(i[-20:])
 
 	print("==========================================================")
-	print(len(p2d.verifiedfiles_succes),'files verified and in order.')
-	disp10(p2d.verifiedfiles_succes,p2d.quiet)
+	print(len(p2d.verifiedfiles_success),'files verified and in order.')
+	disp10(p2d.verifiedfiles_success,p2d.quiet)
 	print(len(p2d.createdfiles_err),'files failed to create.')
 	disp10(p2d.createdfiles_err,p2d.quiet)
 	print(len(p2d.verifiedfiles_err),'files verified and unrepairable.')
@@ -96,7 +98,7 @@ def main():
 	print("Finished.")
 	print("==========================================================")
 	print("There were:")
-	print(len(p2d.verifiedfiles_succes),'files verified and in order.')
+	print(len(p2d.verifiedfiles_success),'files verified and in order.')
 	print(len(p2d.createdfiles),"newly created parity files.")
 	print(len(p2d.removedfiles),"files removed.")
 	print(p2d.len_all_err,"errors.")
@@ -107,7 +109,7 @@ def main():
 	disp10(p2d.removedfiles_err,p2d.quiet)
 
 	if noaction:
-		print(len(p2d.fixes),"verified files succesfully fixed.")
+		print(len(p2d.fixes),"verified files successfully fixed.")
 		disp10(p2d.fixes,p2d.quiet)
 		print(len(p2d.fixes_err),"verified files failed to fix.")
 		disp10(p2d.fixes_err,p2d.quiet)

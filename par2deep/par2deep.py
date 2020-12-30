@@ -1,4 +1,4 @@
-import sys,struct,ctypes,os,subprocess,re,glob,shutil
+import sys,pprint,enum,struct,ctypes,os,subprocess,re,glob,shutil
 from configargparse import ArgParser
 try:
 	from Send2Trash import send2trash
@@ -24,6 +24,21 @@ fourth, ask to repair if possible/necessary.
 fifth, final report.
 '''
 
+class errorcodes(enum.IntEnum):
+	SUCCESS = 0 # "Success.", #can mean no error, but also successfully repaired!
+	REPAIRABLE = 1 # "Repairable damage found.",
+	IRREPAIRABLE = 2 # "Irreparable damage found.",
+	INVALIDARGS = 3 # "Invalid commandline arguments.",
+	UNUSABLE = 4 # "Parity file unusable.",
+	FAIL = 5 # "Repair failed.",
+	IO = 6 # "IO error.",
+	INTERNAL = 7 # "Internal error",
+	OOM = 8 # "Out of memory.",
+	SEND2TRASH_OK = 100 # "send2trash succeeded.",
+	SEND2TRASH_FAIL = 101 # "send2trash did not succeed.",
+	NOTFOUND = 127 # "par2 command not found."
+
+
 class par2deep():
 	def __init__(self,chosen_dir=None):
 		#CMD arguments and configfile
@@ -38,14 +53,13 @@ class par2deep():
 		parser.add_argument("-over", "--overwrite", action='store_true', help="Overwrite existing par2 files.")
 		parser.add_argument("-novfy", "--noverify", action='store_true', help="Do not verify existing files.")
 		parser.add_argument("-keepor", "--keep_orphan", action='store_true', help="Keep orphaned par2 files.")
-		#parser.add_argument("-seppardir", "--separate_parity_directory", action='store_true', help="Store parity data in a subdirectory.")
 		parser.add_argument("-clean", "--clean_backup", action='store_true', help="Remove backups created by par2 (.1,.2 and so on) from your file tree.")
 		parser.add_argument("-ex", "--excludes", action="append", type=str, default=[], help="Optionally excludes directories ('root' is files in the root of -dir).")
 		parser.add_argument("-exex", "--extexcludes", action="append", type=str, default=[], help="Optionally excludes file extensions.")
 		parser.add_argument("-dir", "--directory", type=str, default=current_data_dir, help="Path to protect (default is current directory).")
-		#parser.add_argument("-pardir", "--parity_directory", type=str, default=os.getcwd(), help="Path to parity data store (default is current directory).")
+		parser.add_argument("-parsubdir", "--parity_subdirectory", action='store_true', help="Path to parity data store ($dir/parity).") #for now hardcode
 		parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
-		parser.add_argument("-pcmd", "--par_cmd", type=str, default="", help="Set path to alternative par2 executable (default \"par2\").")
+		parser.add_argument("-pcmd", "--par_cmd", type=str, default="", help="Set path to alternative par2 executable (default built-in library or \"par2\" in path).")
 
 		#lets get a nice dict of all o' that.
 		#FIXME: catch unrecognized arguments
@@ -71,14 +85,16 @@ class par2deep():
 			devnull = open(os.devnull, 'wb')
 			try:
 				subprocess.check_call(cmdcommand,shell=self.shell,stdout=devnull,stderr=devnull)
-				return 0
+				return errorcodes.SUCCESS
 			except subprocess.CalledProcessError as e:
 				return e.returncode
 			except FileNotFoundError:
-				return 200
+				return errorcodes.NOTFOUND
 
 
-	def check_state(self):
+	def init_par_cmd(self):
+		## first, set possibly changed self.args
+		pprint.pprint(self.args)
 		for k,v in self.args.items():
 			setattr(self, k, v)
 		self.percentage = str(self.args["percentage"])
@@ -95,10 +111,15 @@ class par2deep():
 			self.shell=True #shell true because otherwise pythonw.exe pops up a window for every par2 action!
 
 		self.libpar2_works = False
-		if os.path.isfile(self.args["par_cmd"]):
-			self.par_cmd = self.args["par_cmd"]
+
+		if self.args["par_cmd"]:
+			if shutil.which(self.args["par_cmd"]):
+				self.par_cmd = self.args["par_cmd"]
+				return errorcodes.SUCCESS
+			else:
+				return errorcodes.NOTFOUND
 		else:
-			#pcmd not set by user, so lets see if we can use libpar2
+			#pcmd not set by user, so lets see if we can use builtin libpar2 or par2
 			if bit64:
 				this_script_dir = os.path.dirname(os.path.abspath(__file__))
 				if windows:
@@ -129,11 +150,14 @@ class par2deep():
 					self.par_cmd = 'par2.exe'
 				else:
 					self.par_cmd = 'par2'
-		# now test
-		if not self.libpar2_works and self.runpar() == 200:
-			return 200
-			#if 200, then par2 doesnt exist.
+			# now test
+			if not self.libpar2_works and self.runpar() == errorcodes.NOTFOUND:
+				return errorcodes.NOTFOUND
+			else:
+				return errorcodes.SUCCESS
 
+
+	def set_state(self):
 		allfiles = [f for f in glob.glob(os.path.join(self.directory,"**","*"), recursive=True) if os.path.isfile(f)] #not sure why required, but glob may introduce paths...
 
 		if 'root' in self.excludes:
@@ -224,21 +248,6 @@ class par2deep():
 
 		create.extend(incomplete)
 
-		errorcodes = {
-			0: "Succes.", #can mean no error, but also succesfully repaired!
-			1: "Repairable damage found.",
-			2: "Irreparable damage found.",
-			3: "Invalid commandline arguments.",
-			4: "Parity file unusable.",
-			5: "Repair failed.",
-			6: "IO error.",
-			7: "Internal error",
-			8: "Out of memory.",
-			100: "send2trash succeeded.",
-			101: "send2trash did not succeed.",
-			200: "par2 command not found."
-		}
-
 		createdfiles=[]
 		createdfiles_err=[]
 		if len(create)>0:
@@ -250,10 +259,12 @@ class par2deep():
 					send2trash(p)
 					#par2 does not delete preexisting parity data, so delete any possible data.
 				createdfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
-			createdfiles_err=[ [i,j] for i,j in createdfiles if j != 0 and j != 100 ]
+			createdfiles_err=[ [i,j] for i,j in createdfiles
+										if j != errorcodes.SUCCESS
+										and j != errorcodes.SEND2TRASH_OK ]
 
 		verifiedfiles=[]
-		verifiedfiles_succes=[]
+		verifiedfiles_success=[]
 		verifiedfiles_err=[]
 		verifiedfiles_repairable=[]
 		if not self.noverify and not self.overwrite and len(verify)>0:
@@ -261,10 +272,14 @@ class par2deep():
 			for f in verify:
 				yield f
 				verifiedfiles.append([ f , self.runpar(["v",f]) ])
-			verifiedfiles_err=[ [i,j] for i,j in verifiedfiles if j != 0 and j != 100 and j != 1 ]
-			verifiedfiles_repairable=[ [i,j] for i,j in verifiedfiles if j == 1 ]
-			verifiedfiles_succes=[ [i,j] for i,j in verifiedfiles if j == 0 ]
-
+			verifiedfiles_err=[ [i,j] for i,j in verifiedfiles
+										if j != errorcodes.SUCCESS
+										and j != errorcodes.SEND2TRASH_OK
+										and j != errorcodes.REPAIRABLE ]
+			verifiedfiles_repairable=[ [i,j] for i,j in verifiedfiles
+										if j == errorcodes.REPAIRABLE ]
+			verifiedfiles_success=[ [i,j] for i,j in verifiedfiles
+										if j == errorcodes.SUCCESS ]
 		removedfiles=[]
 		removedfiles_err=[]
 		if len(orphans_delete)>0:
@@ -273,23 +288,27 @@ class par2deep():
 				yield f
 				if os.path.isfile(f): # so send2trash always succeeds and returns None
 					send2trash(f)
-					removedfiles.append([ f , 100 ])
+					removedfiles.append([ f , errorcodes.SEND2TRASH_OK ])
 				else:
-					removedfiles.append([ f , 101 ])
-			removedfiles_err=[ [i,j] for i,j in removedfiles if j !=0 and j != 100 ]
+					removedfiles.append([ f , errorcodes.SEND2TRASH_FAIL ])
+			removedfiles_err=[ [i,j] for i,j in removedfiles
+										if j != errorcodes.SUCCESS
+										and j != errorcodes.SEND2TRASH_OK ]
 		if len(backups_delete)>0:
 			#print('Removing ...')
 			for f in backups_delete:
 				yield f
 				if os.path.isfile(f): # so send2trash always succeeds and returns None
 					send2trash(f)
-					removedfiles.append([ f , 100 ])
+					removedfiles.append([ f , errorcodes.SEND2TRASH_OK ])
 				else:
-					removedfiles.append([ f , 101 ])
-			removedfiles_err=[ [i,j] for i,j in removedfiles if j !=0 and j != 100 ]
+					removedfiles.append([ f , errorcodes.SEND2TRASH_FAIL ])
+			removedfiles_err=[ [i,j] for i,j in removedfiles
+										if j != errorcodes.SUCCESS
+										and j != errorcodes.SEND2TRASH_OK ]
 
 		self.createdfiles=createdfiles
-		self.verifiedfiles_succes=verifiedfiles_succes
+		self.verifiedfiles_success=verifiedfiles_success
 		self.removedfiles=removedfiles
 
 		self.createdfiles_err=createdfiles_err
@@ -310,7 +329,7 @@ class par2deep():
 			for f,retcode in self.verifiedfiles_repairable:
 				yield f
 				retval = self.runpar(["r",f])
-				if retval == 0:
+				if retval == errorcodes.SUCCESS:
 					if self.clean_backup:
 						#backups should just have been cleaned in the execute phase and therefore a .1 been created.
 						backupfile=f+".1"
@@ -326,9 +345,9 @@ class par2deep():
 				recreatedfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 
 		self.recreate = sorted(recreatedfiles)
-		self.recreate_err = sorted([f for f,err in recreatedfiles if err !=0])
-		self.fixes = sorted([f for f,err in repairedfiles if err ==0])
-		self.fixes_err = sorted([f for f,err in repairedfiles if err !=0])
+		self.recreate_err = sorted([f for f,err in recreatedfiles if err != errorcodes.SUCCESS])
+		self.fixes = sorted([f for f,err in repairedfiles if err == errorcodes.SUCCESS])
+		self.fixes_err = sorted([f for f,err in repairedfiles if err != errorcodes.SUCCESS])
 
 		self.len_all_err = self.len_all_err + len(self.recreate_err) + len(self.fixes_err)
 
@@ -348,7 +367,7 @@ class par2deep():
 					shutil.copyfile(f,ftmp)
 					# now that we have a backup of the repairable, repair to obtain the actual backup we want.
 					retval = self.runpar(["r",f])
-					if retval == 0:
+					if retval == errorcodes.SUCCESS:
 						# f is now the file we actually want to backup.
 						shutil.copyfile(f,f+".0") # will overwrite acc. to docs
 						# the last .[0-9] is the copy par2 just made, let's delete it.
@@ -358,7 +377,7 @@ class par2deep():
 								# we overshot by 1
 								os.remove(f+"."+str(nbr-1))
 								break
-					elif retval != 0:
+					elif retval != errorcodes.SUCCESS:
 						# making the backup failed, no need to move it. we don't report it anywhere, nothing we can do to handle.
 						# we made ftmp and did not rely on par2's backup in case the repair was attempted but failed.
 						# probably never happens, but you can never be too certain
@@ -379,7 +398,7 @@ class par2deep():
 				recreatedfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
 
 		self.recreate = sorted(recreatedfiles)
-		self.recreate_err = sorted([f for f,err in recreatedfiles if err !=0])
+		self.recreate_err = sorted([f for f,err in recreatedfiles if err != errorcodes.SUCCESS])
 		self.fixes = []
 		self.fixes_err = []
 

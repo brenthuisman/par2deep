@@ -102,12 +102,11 @@ class progress_thread(QThread):
 		self.retval.emit(self.p2d)
 
 
-class check_state_thread(QThread):
-	check_state_retval = pyqtSignal(int,'PyQt_PyObject')
+class set_state_thread(QThread):
+	retval = pyqtSignal('PyQt_PyObject')
 	def __init__(self,p2d_obj):
 		QThread.__init__(self)
 		self.p2d=p2d_obj
 	def run(self):
-		#self.p2d.args['wololo']=True
-		state = self.p2d.check_state()
-		self.check_state_retval.emit(state,self.p2d)
+		self.p2d.set_state()
+		self.retval.emit(self.p2d)
