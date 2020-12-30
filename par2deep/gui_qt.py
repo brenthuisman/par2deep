@@ -77,7 +77,7 @@ class app_window(QMainWindow):
 			if os.path.isdir(text):
 				self.new_window(self.topbar_frame(0), self.start_options_frame(text), self.start_actions_frame())
 
-		pickdir_txt = QLineEdit(self.p2d.args["directory"])
+		pickdir_txt = QLineEdit(os.path.abspath(self.p2d.args["directory"]))
 		pickdir_txt.textChanged.connect(textchanged)
 
 		basicset_layout = QHBoxLayout()
