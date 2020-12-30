@@ -175,11 +175,11 @@ class par2deep():
 
 
 	def get_parf_glob(self,fname,ext='*.par2'):
-		print(self.get_parf(fname,''),ext)
 		return glob.glob(glob.escape(self.get_parf(fname,''))+ext)
 
 
 	def set_state(self):
+		self.directory = os.path.abspath(self.directory)
 		self.parity_directory = self.directory
 		if self.parity_subdirectory:
 			self.parity_directory=os.path.join(self.directory,self.parity_subdirectory_dir)
@@ -299,7 +299,7 @@ class par2deep():
 										self.runpar(["c",
 										"-s"+str(blocksize),
 										"-c"+str(self.nr_blocks),
-										"-B"+self.directory,
+										"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
@@ -317,9 +317,10 @@ class par2deep():
 			for f in verify:
 				yield f
 				parf = self.get_parf(f)
+				print(self.directory,parf,f)
 				verifiedfiles.append([ f ,
 										self.runpar(["v",
-										"-B"+self.directory,
+										"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
@@ -382,7 +383,7 @@ class par2deep():
 				yield f
 				parf = self.get_parf(f)
 				retval = self.runpar(["r",
-										"-B"+self.directory,
+										"-B"+os.path.dirname(f),
 										parf,
 										f])
 				if retval == errorcodes.SUCCESS:
@@ -405,7 +406,7 @@ class par2deep():
 										self.runpar(["c",
 										"-s"+str(blocksize),
 										"-c"+str(self.nr_blocks),
-										"-B"+self.directory,
+										"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
@@ -435,7 +436,7 @@ class par2deep():
 					shutil.copyfile(f,ftmp)
 					# now that we have a backup of the repairable, repair to obtain the actual backup we want.
 					retval = self.runpar(["r",
-										"-B"+self.parity_directory,
+										"-B"+os.path.dirname(f),
 										parf,
 										f])
 					if retval == errorcodes.SUCCESS:
@@ -465,7 +466,7 @@ class par2deep():
 										self.runpar(["c",
 										"-s"+str(blocksize),
 										"-c"+str(self.nr_blocks),
-										"-B"+self.parity_directory,
+										"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
@@ -483,7 +484,7 @@ class par2deep():
 										self.runpar(["c",
 										"-s"+str(blocksize),
 										"-c"+str(self.nr_blocks),
-										"-B"+self.parity_directory,
+										"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
