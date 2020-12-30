@@ -20,7 +20,7 @@ second, depending on overrides, propose actions and ask user confirmation
 		- override = dont remove .par2 if no file
 third, execute user choices.
 	- these _execute function are iterable through yield, which is done at the start of the loop such that we know what the current file being worked on is.
-fourth, ask to repair if possible/necesary.
+fourth, ask to repair if possible/necessary.
 fifth, final report.
 '''
 
@@ -34,9 +34,9 @@ class par2deep():
 			current_data_dir = os.path.abspath(chosen_dir)
 			parser = ArgParser(default_config_files=[os.path.join(current_data_dir,'par2deep.ini'), '~/.par2deep'])
 
-		parser.add_argument("-q", "--quiet", action='store_true', help="Don't asks questions, go with all defaults, including repairing and deleting files (default off).")
-		parser.add_argument("-over", "--overwrite", action='store_true', help="Overwrite existing par2 files (default off).")
-		parser.add_argument("-novfy", "--noverify", action='store_true', help="Do not verify existing files (default off).")
+		parser.add_argument("-q", "--quiet", action='store_true', help="Don't asks questions, go with all defaults, including repairing and deleting files.")
+		parser.add_argument("-over", "--overwrite", action='store_true', help="Overwrite existing par2 files.")
+		parser.add_argument("-novfy", "--noverify", action='store_true', help="Do not verify existing files.")
 		parser.add_argument("-keepor", "--keep_orphan", action='store_true', help="Keep orphaned par2 files.")
 		#parser.add_argument("-seppardir", "--separate_parity_directory", action='store_true', help="Store parity data in a subdirectory.")
 		parser.add_argument("-clean", "--clean_backup", action='store_true', help="Remove backups created by par2 (.1,.2 and so on) from your file tree.")
@@ -46,12 +46,12 @@ class par2deep():
 		#parser.add_argument("-pardir", "--parity_directory", type=str, default=os.getcwd(), help="Path to parity data store (default is current directory).")
 		parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
 		parser.add_argument("-pcmd", "--par_cmd", type=str, default="", help="Set path to alternative par2 executable (default \"par2\").")
-		
+
 		#lets get a nice dict of all o' that.
 		#FIXME: catch unrecognized arguments
 		args = {k:v for k,v in vars(parser.parse_args()).items() if v is not None}
 		args["nr_parfiles"] = str(1) #number of parity files
-		
+
 		#set that shit
 		self.args = args
 		return
@@ -82,18 +82,18 @@ class par2deep():
 		for k,v in self.args.items():
 			setattr(self, k, v)
 		self.percentage = str(self.args["percentage"])
-		
+
 		#we provide a win64 and lin64 library, use if on those platforms, otherwise fallback to par_cmd, and check if that is working
 		_void_ptr_size = struct.calcsize('P')
 		bit64 = _void_ptr_size * 8 == 64
 		windows = 'win32' in str(sys.platform).lower()
 		linux = 'linux' in str(sys.platform).lower()
 		macos = 'darwin' in str(sys.platform).lower()
-		
+
 		self.shell=False
 		if windows:
 			self.shell=True #shell true because otherwise pythonw.exe pops up a window for every par2 action!
-		
+
 		self.libpar2_works = False
 		if os.path.isfile(self.args["par_cmd"]):
 			self.par_cmd = self.args["par_cmd"]
@@ -317,7 +317,7 @@ class par2deep():
 						if os.path.isfile(backupfile):
 							send2trash(backupfile)
 				repairedfiles.append([ f , retval ])
-			
+
 			for f,retcode in self.verifiedfiles_err:
 				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')
@@ -338,7 +338,7 @@ class par2deep():
 	def execute_recreate(self):
 		recreatedfiles=[]
 		# we recreate everything, including repairables. we do create a backup for the repairables
-		
+
 		if self.len_verified_actions>0:
 			for f,retcode in self.verifiedfiles_repairable:
 				yield f
@@ -370,7 +370,7 @@ class par2deep():
 				for p in pars:
 					send2trash(p)
 				recreatedfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
-			
+
 			for f,retcode in self.verifiedfiles_err:
 				yield f
 				pars = glob.glob(glob.escape(f)+'*.par2')

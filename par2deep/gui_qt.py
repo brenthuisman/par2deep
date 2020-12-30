@@ -107,6 +107,11 @@ class app_window(QMainWindow):
 		cb4.setToolTip("Remove backup files (*.[0-9]).")
 		cb4.stateChanged.connect(lambda fldval : self.p2d.args.update({"clean_backup":bool(fldval)}))
 		
+		cb5 = QCheckBox("Store parity data in the '.parity' subdirectory")
+		cb5.setChecked(self.p2d.args["parity_subdirectory"])
+		cb5.setToolTip("Store parity data in the '.parity' subdirectory.")
+		cb5.stateChanged.connect(lambda fldval : self.p2d.args.update({"parity_subdirectory":bool(fldval)}))
+		
 		ex_lb = QLabel("Exclude directories (comma separated):")
 		ex_fld = QLineEdit(','.join(self.p2d.args["excludes"]))
 		ex_fld.setToolTip("These sub-directories will be excluded from the analysis. Use 'root' for the root of the directory.")
@@ -130,6 +135,7 @@ class app_window(QMainWindow):
 		advset_layout.addWidget(cb2,0)
 		advset_layout.addWidget(cb3,0)
 		advset_layout.addWidget(cb4,0)
+		advset_layout.addWidget(cb5,0)
 		advset_layout.addWidget(ex_lb,0)
 		advset_layout.addWidget(ex_fld,0)
 		advset_layout.addWidget(exex_lb,0)
