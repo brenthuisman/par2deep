@@ -388,13 +388,22 @@ class app_window(QMainWindow):
 		return
 
 
-	def scrollable_treeview_frame(self,nodes={}):
+	def scrollable_treeview_frame(self,dispdict={}):
 		tree=QTreeWidget()
 		tree.setHeaderLabels(["Filename", "Action"])
 		tree.setColumnWidth(0,600) #unf at this point tree.width is not jet set to the onscreen value.
 		tree.setContextMenuPolicy(Qt.CustomContextMenu);
 		
-		for i,(node,label) in enumerate(nodes.items()):
+		# TODO test get_subtree_nodes!
+		def get_subtree_nodes(tree_widget_item):
+			"""Returns all QTreeWidgetItems in the subtree rooted at the given node."""
+			nodes = []
+			nodes.append(tree_widget_item)
+			for i in range(tree_widget_item.childCount()):
+				nodes.extend(get_subtree_nodes(tree_widget_item.child(i)))
+			return nodes
+		# TODO: use custom treewidget in toolsbox.
+		for node,label in dispdict.items():
 			if len(getattr(self.p2d,node))==0:
 				tree.addTopLevelItem(QTreeWidgetItem(None,
 					[label+": no files.",'']
@@ -405,19 +414,15 @@ class app_window(QMainWindow):
 					)
 				tree.addTopLevelItem(thing)
 	
-				# FIXME: show files in fs hierarchy, not flat
 				for item in getattr(self.p2d,node):
-					if not isinstance(item, list):
-						thing.addChild(QTreeWidgetItem(None,
-							[item,node]
-							))
+					if isinstance(item, list):
+						fname=item[0].split("/")
 					else:
-						thing.addChild(QTreeWidgetItem(None,
-							[item[0],node]
-							))
+						fname=item.split("/")
+					# FIXME: show files in fs hierarchy, not flat
+					# see tests_qt
+					thing.addChild(QTreeWidgetItem(None,[os.sep.join(fname),node]))
 
-		# http://blog.asimation.com/37/
-		
 		def doubleclick_tree(event):
 			startfile(tree.currentItem().text(0))
 			return
@@ -425,13 +430,14 @@ class app_window(QMainWindow):
 		tree.itemDoubleClicked.connect(doubleclick_tree)
 
 		def show_contextmenu(position):
+			# https://stackoverflow.com/questions/14237020/qtreewidget-right-click-menu
 			popup = QMenu()
-			for node,label in nodes.items():
+			for node,label in dispdict.items():
 				popup.addAction(label)
 			action = popup.exec_(tree.mapToGlobal(position))
-			print(action)
+			print(tree.itemAt(position).text(0))
 			# FIXME actually change actions per file.
-			#for node,label in nodes.items():
+			#for node,label in dispdict.items():
 				#if action == quitAction:
 				#qApp.quit()
 				

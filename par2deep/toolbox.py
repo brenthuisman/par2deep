@@ -1,5 +1,5 @@
 import os,sys
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLabel
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLabel, QTreeWidgetItem, QComboBox
 from PyQt5.QtCore import Qt,QThread,pyqtSignal
 
 
@@ -35,6 +35,51 @@ def startfile(fname):
 			os.system("nohup xdg-open \""+fname+"\" >/dev/null 2>&1 &")
 		# TODO macos?
 	return
+
+
+class CustomTreeItem( QTreeWidgetItem ):
+	def __init__( self, name, actions, parent=None):
+		super().__init__(parent)
+		
+		## First column (0), name
+		self.setText( 0, name )
+
+		if isinstance(actions, list):
+			self.dropdown = QComboBox()
+			self.dropdown.addItems(actions)
+			self.treeWidget().setItemWidget(self, 1, self.dropdown)
+		elif isinstance(actions, str):
+			self.setText(1, actions)
+
+		## Column 2 - Button:
+		#self.button = QtGui.QPushButton()
+		#self.button.setText( "button %s" %name )
+		#self.treeWidget().setItemWidget( self, 2, self.button )
+
+		## Signals
+		self.treeWidget().connect( self.button, QtCore.SIGNAL("clicked()"), self.buttonPressed )
+
+	#@property
+	#def name(self):
+		#'''
+		#Return name ( 1st column text )
+		#'''
+		#return self.text(0)
+
+	#@property
+	#def value(self):
+		#'''
+		#Return value ( 2nd column int)
+		#'''
+		#return self.spinBox.value() 
+
+	#def buttonPressed(self):
+		#'''
+		#Triggered when Item's button pressed.
+		#an example of using the Item's own values.
+		#'''
+		#print ("This Item name:%s value:%i" %( self.name,
+											#self.value ))
 
 
 class BSlider(QWidget):
