@@ -64,7 +64,11 @@ class par2deep():
 		#lets get a nice dict of all o' that.
 		#FIXME: catch unrecognized arguments
 		args = {k:v for k,v in vars(parser.parse_args()).items() if v is not None}
-		args["nr_parfiles"] = str(1) #number of parity files
+
+		#constants
+		args["nr_parfiles"] = 1 #number of parity files
+		args["nr_blocks"] = 100
+		args["parity_subdirectory_dir"] = "parity"
 
 		#set that shit
 		self.args = args
@@ -97,7 +101,6 @@ class par2deep():
 		pprint.pprint(self.args)
 		for k,v in self.args.items():
 			setattr(self, k, v)
-		self.percentage = str(self.args["percentage"])
 
 		#we provide a win64 and lin64 library, use if on those platforms, otherwise fallback to par_cmd, and check if that is working
 		_void_ptr_size = struct.calcsize('P')
@@ -157,8 +160,34 @@ class par2deep():
 				return errorcodes.SUCCESS
 
 
+	def get_parf(self,fname,ext='.par2'):
+		if self.parity_subdirectory:
+			return os.path.join(self.parity_directory,os.path.relpath(fname,self.directory)+ext)
+		else:
+			return fname+ext
+
+
+	def get_f(self,parfname):
+		if parfname.endswith('.par2'):
+			return parfname[:-5].replace(self.parity_directory,self.directory)
+		else:
+			return parfname.replace(self.parity_directory,self.directory)
+
+
+	def get_parf_glob(self,fname,ext='*.par2'):
+		print(self.get_parf(fname,''),ext)
+		return glob.glob(glob.escape(self.get_parf(fname,''))+ext)
+
+
 	def set_state(self):
+		self.parity_directory = self.directory
+		if self.parity_subdirectory:
+			self.parity_directory=os.path.join(self.directory,self.parity_subdirectory_dir)
+
 		allfiles = [f for f in glob.glob(os.path.join(self.directory,"**","*"), recursive=True) if os.path.isfile(f)] #not sure why required, but glob may introduce paths...
+
+		if self.parity_subdirectory:
+			allfiles = [f for f in allfiles if self.parity_directory not in f] #remove parity dir if we use a subdir
 
 		if 'root' in self.excludes:
 			allfiles = [f for f in allfiles if os.path.dirname(f) != self.directory]
@@ -175,8 +204,13 @@ class par2deep():
 		parrables = [f for f in allfiles if not f.endswith((".par2",".par2deep_tmpfile"))]
 
 		pattern = '.+vol[0-9]+\+[0-9]+\.par2'
-		par2corrfiles = [f for f in allfiles if re.search(pattern, f)]
-		par2files = [f for f in allfiles if f.endswith(".par2") and not re.search(pattern, f)]
+		if self.parity_subdirectory:
+			parity_subdirectory_glob = glob.glob(os.path.join(self.parity_directory,"**","*.par2"), recursive=True)
+			par2files = [f for f in parity_subdirectory_glob if os.path.isfile(f) and f.endswith(".par2") and not re.search(pattern, f)]
+			par2corrfiles = [f for f in parity_subdirectory_glob if re.search(pattern, f)]
+		else:
+			par2files = [f for f in allfiles if f.endswith(".par2") and not re.search(pattern, f)]
+			par2corrfiles = [f for f in allfiles if re.search(pattern, f)]
 
 		if self.clean_backup:
 			backups_delete = [i for i in backups_keep]
@@ -188,8 +222,8 @@ class par2deep():
 		#print("Checking files for parrability ...")
 		for f in parrables:
 			# check if both or one of the par files is missing
-			ispar = os.path.isfile(f+".par2")
-			isvolpar = len(glob.glob(glob.escape(f)+".vol*.par2")) > 0
+			ispar = os.path.isfile(self.get_parf(f))
+			isvolpar = len(self.get_parf_glob(f,".vol*.par2")) > 0
 			if self.overwrite:
 				create.append(f)
 			elif not ispar and not isvolpar:
@@ -208,18 +242,18 @@ class par2deep():
 		orphans_delete = []
 		orphans_keep = []
 		#print("Checking for orphans par2 files ...")
-		for f in par2files:
-			if not os.path.isfile(f[:-5]):
+		for parf in par2files:
+			if not os.path.isfile(self.get_f(parf)):
 				if self.keep_orphan:
-					orphans_keep.append(f)
+					orphans_keep.append(parf)
 				else:
-					orphans_delete.append(f)
-		for f in par2corrfiles:
-			if not os.path.isfile(f.split('.vol')[0]):
+					orphans_delete.append(parf)
+		for parf in par2corrfiles:
+			if not os.path.isfile(self.get_f(parf.split('.vol')[0])):
 				if self.keep_orphan:
-					orphans_keep.append(f)
+					orphans_keep.append(parf)
 				else:
-					orphans_delete.append(f)
+					orphans_delete.append(parf)
 		backups_delete.extend([f for f in allfiles if f.endswith(".par2deep_tmpfile")])
 
 		self.create = sorted(create)
@@ -254,11 +288,22 @@ class par2deep():
 			#print('Creating ...')
 			for f in create:
 				yield f
-				pars = glob.glob(glob.escape(f)+'*.par2')
+				parf = self.get_parf(f)
+				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
 					#par2 does not delete preexisting parity data, so delete any possible data.
-				createdfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
+				# createdfiles.append([ f , self.runpar(["c","-r"+str(self.percentage),"-n"+str(self.nr_parfiles),f]) ])
+				blocksize = int(self.percentage*os.path.getsize(f)/4//100//self.nr_blocks*4)
+				createdfiles.append([ f ,
+										self.runpar(["c",
+										"-s"+str(blocksize),
+										"-c"+str(self.nr_blocks),
+										"-B"+self.directory,
+										parf,
+										f
+										])
+									])
 			createdfiles_err=[ [i,j] for i,j in createdfiles
 										if j != errorcodes.SUCCESS
 										and j != errorcodes.SEND2TRASH_OK ]
@@ -271,7 +316,14 @@ class par2deep():
 			#print('Verifying ...')
 			for f in verify:
 				yield f
-				verifiedfiles.append([ f , self.runpar(["v",f]) ])
+				parf = self.get_parf(f)
+				verifiedfiles.append([ f ,
+										self.runpar(["v",
+										"-B"+self.directory,
+										parf,
+										f
+										])
+									])
 			verifiedfiles_err=[ [i,j] for i,j in verifiedfiles
 										if j != errorcodes.SUCCESS
 										and j != errorcodes.SEND2TRASH_OK
@@ -328,7 +380,11 @@ class par2deep():
 		if self.len_verified_actions>0:
 			for f,retcode in self.verifiedfiles_repairable:
 				yield f
-				retval = self.runpar(["r",f])
+				parf = self.get_parf(f)
+				retval = self.runpar(["r",
+										"-B"+self.directory,
+										parf,
+										f])
 				if retval == errorcodes.SUCCESS:
 					if self.clean_backup:
 						#backups should just have been cleaned in the execute phase and therefore a .1 been created.
@@ -339,10 +395,21 @@ class par2deep():
 
 			for f,retcode in self.verifiedfiles_err:
 				yield f
-				pars = glob.glob(glob.escape(f)+'*.par2')
+				parf = self.get_parf(f)
+				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
-				recreatedfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
+				# recreatedfiles.append([ f , self.runpar(["c","-r"+str(self.percentage),"-n"+str(self.nr_parfiles),f]) ])
+				blocksize = int(self.percentage*os.path.getsize(f)/4//100//self.nr_blocks*4)
+				recreatedfiles.append([ f ,
+										self.runpar(["c",
+										"-s"+str(blocksize),
+										"-c"+str(self.nr_blocks),
+										"-B"+self.directory,
+										parf,
+										f
+										])
+									])
 
 		self.recreate = sorted(recreatedfiles)
 		self.recreate_err = sorted([f for f,err in recreatedfiles if err != errorcodes.SUCCESS])
@@ -361,12 +428,16 @@ class par2deep():
 		if self.len_verified_actions>0:
 			for f,retcode in self.verifiedfiles_repairable:
 				yield f
+				parf = self.get_parf(f)
 				if not self.clean_backup:
 					# first, copy the repairable file, we need it later
 					ftmp = f+".par2deep_tmpfile"
 					shutil.copyfile(f,ftmp)
 					# now that we have a backup of the repairable, repair to obtain the actual backup we want.
-					retval = self.runpar(["r",f])
+					retval = self.runpar(["r",
+										"-B"+self.parity_directory,
+										parf,
+										f])
 					if retval == errorcodes.SUCCESS:
 						# f is now the file we actually want to backup.
 						shutil.copyfile(f,f+".0") # will overwrite acc. to docs
@@ -385,17 +456,38 @@ class par2deep():
 					# regardless of retval, we put ftmp back to f. this is the file we want to recreate for.
 					os.replace(ftmp,f)
 				# same as verifiedfiles_err
-				pars = glob.glob(glob.escape(f)+'*.par2')
+				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
-				recreatedfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
+				# recreatedfiles.append([ f , self.runpar(["c","-r"+str(self.percentage),"-n"+str(self.nr_parfiles),f]) ])
+				blocksize = int(self.percentage*os.path.getsize(f)/4//100//self.nr_blocks*4)
+				recreatedfiles.append([ f ,
+										self.runpar(["c",
+										"-s"+str(blocksize),
+										"-c"+str(self.nr_blocks),
+										"-B"+self.parity_directory,
+										parf,
+										f
+										])
+									])
 
 			for f,retcode in self.verifiedfiles_err:
 				yield f
-				pars = glob.glob(glob.escape(f)+'*.par2')
+				parf = self.get_parf(f)
+				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
-				recreatedfiles.append([ f , self.runpar(["c","-r"+self.percentage,"-n"+self.nr_parfiles,f]) ])
+				# recreatedfiles.append([ f , self.runpar(["c","-r"+str(self.percentage),"-n"+str(self.nr_parfiles),f]) ])
+				blocksize = int(self.percentage*os.path.getsize(f)/4//100//self.nr_blocks*4)
+				recreatedfiles.append([ f ,
+										self.runpar(["c",
+										"-s"+str(blocksize),
+										"-c"+str(self.nr_blocks),
+										"-B"+self.parity_directory,
+										parf,
+										f
+										])
+									])
 
 		self.recreate = sorted(recreatedfiles)
 		self.recreate_err = sorted([f for f,err in recreatedfiles if err != errorcodes.SUCCESS])
