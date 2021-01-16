@@ -93,7 +93,7 @@ class par2deep():
 			cmdcommand.extend(command)
 			devnull = open(os.devnull, 'wb')
 			try:
-				subprocess.check_call(cmdcommand,shell=self.shell,stdout=devnull,stderr=devnull)
+				subprocess.check_call(cmdcommand,shell=self.shell)#,stdout=devnull,stderr=devnull)
 				return errorcodes.SUCCESS
 			except subprocess.CalledProcessError as e:
 				return e.returncode
@@ -166,17 +166,24 @@ class par2deep():
 
 
 	def get_parf(self,fname,ext='.par2'):
-		if self.parity_subdirectory:
-			return os.path.join(self.parity_directory,os.path.relpath(fname,self.directory)+ext)
-		else:
-			return fname+ext
+		# if self.parity_subdirectory:
+		# 	return os.path.join(self.parity_directory,os.path.relpath(fname,self.directory)+ext)
+		# else:
+		# 	return fname+ext
+		print("get_parf",os.path.relpath(fname,self.directory)+ext)
+		return os.path.relpath(fname,self.directory)+ext
 
 
 	def get_f(self,parfname):
+		# if parfname.endswith('.par2'):
+		# 	return parfname[:-5].replace(self.parity_directory,self.directory)
+		# else:
+		# 	return parfname.replace(self.parity_directory,self.directory)
+		print("get_f",parfname)
 		if parfname.endswith('.par2'):
-			return parfname[:-5].replace(self.parity_directory,self.directory)
+			return parfname[:-5]#.replace(self.parity_directory,self.directory)
 		else:
-			return parfname.replace(self.parity_directory,self.directory)
+			return parfname#.replace(self.parity_directory,self.directory)
 
 
 	def get_parf_glob(self,fname,ext='*.par2'):
@@ -184,7 +191,7 @@ class par2deep():
 
 
 	def set_state(self):
-		self.directory = os.path.abspath(self.directory)
+		# self.directory = os.path.abspath(self.directory)
 		self.parity_directory = self.directory
 		if self.parity_subdirectory:
 			self.parity_directory=os.path.join(self.directory,self.parity_subdirectory_dir)
@@ -298,11 +305,11 @@ class par2deep():
 				for p in pars:
 					send2trash(p)
 					#par2 does not delete preexisting parity data, so delete any possible data.
-				blocksize,blockcount = getblocksizecount(f)
+				blocksize,blockcount = self.getblocksizecount(f)
 				createdfiles.append([ f ,
 										self.runpar(["c",
-										"-s "+str(blocksize),
-										"-c "+str(blockcount),
+										"-s",str(blocksize),
+										"-c",str(blockcount),
 										#"-B"+os.path.dirname(f),
 										parf,
 										f
@@ -324,7 +331,7 @@ class par2deep():
 				print(self.directory,parf,f)
 				verifiedfiles.append([ f ,
 										self.runpar(["v",
-										"-B"+os.path.dirname(f),
+										#"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
@@ -387,7 +394,7 @@ class par2deep():
 				yield f
 				parf = self.get_parf(f)
 				retval = self.runpar(["r",
-										"-B"+os.path.dirname(f),
+										#"-B"+os.path.dirname(f),
 										parf,
 										f])
 				if retval == errorcodes.SUCCESS:
@@ -404,11 +411,11 @@ class par2deep():
 				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
-				blocksize,blockcount = getblocksizecount(f)
+				blocksize,blockcount = self.getblocksizecount(f)
 				recreatedfiles.append([ f ,
 										self.runpar(["c",
-										"-s "+str(blocksize),
-										"-c "+str(blockcount),
+										"-s",str(blocksize),
+										"-c",str(blockcount),
 										#"-B"+os.path.dirname(f),
 										parf,
 										f
@@ -439,7 +446,7 @@ class par2deep():
 					shutil.copyfile(f,ftmp)
 					# now that we have a backup of the repairable, repair to obtain the actual backup we want.
 					retval = self.runpar(["r",
-										"-B"+os.path.dirname(f),
+										#"-B"+os.path.dirname(f),
 										parf,
 										f])
 					if retval == errorcodes.SUCCESS:
@@ -463,11 +470,11 @@ class par2deep():
 				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
-				blocksize,blockcount = getblocksizecount(f)
+				blocksize,blockcount = self.getblocksizecount(f)
 				recreatedfiles.append([ f ,
 										self.runpar(["c",
-										"-s "+str(blocksize),
-										"-c "+str(blockcount),
+										"-s",str(blocksize),
+										"-c",str(blockcount),
 										#"-B"+os.path.dirname(f),
 										parf,
 										f
@@ -480,11 +487,11 @@ class par2deep():
 				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
-				blocksize,blockcount = getblocksizecount(f)
+				blocksize,blockcount = self.getblocksizecount(f)
 				recreatedfiles.append([ f ,
 										self.runpar(["c",
-										"-s "+str(blocksize),
-										"-c "+str(blockcount),
+										"-s",str(blocksize),
+										"-c",str(blockcount),
 										#"-B"+os.path.dirname(f),
 										parf,
 										f
