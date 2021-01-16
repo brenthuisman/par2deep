@@ -67,12 +67,17 @@ class par2deep():
 
 		#constants
 		args["nr_parfiles"] = 1 #number of parity files
-		args["nr_blocks"] = 100
 		args["parity_subdirectory_dir"] = "parity"
 
 		#set that shit
 		self.args = args
 		return
+
+
+	def getblocksizecount(self,filename):
+		blocksize = ((os.path.getsize(filename)//2**15)//4+1)*4
+		blockcount = 2**15*self.percentage//100
+		return blocksize,blockcount
 
 
 	def runpar(self,command=""):
@@ -293,13 +298,12 @@ class par2deep():
 				for p in pars:
 					send2trash(p)
 					#par2 does not delete preexisting parity data, so delete any possible data.
-				# createdfiles.append([ f , self.runpar(["c","-r"+str(self.percentage),"-n"+str(self.nr_parfiles),f]) ])
-				blocksize = int(self.percentage*os.path.getsize(f)/4//100//self.nr_blocks*4)
+				blocksize,blockcount = getblocksizecount(f)
 				createdfiles.append([ f ,
 										self.runpar(["c",
-										"-s"+str(blocksize),
-										"-c"+str(self.nr_blocks),
-										"-B"+os.path.dirname(f),
+										"-s "+str(blocksize),
+										"-c "+str(blockcount),
+										#"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
@@ -400,13 +404,12 @@ class par2deep():
 				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
-				# recreatedfiles.append([ f , self.runpar(["c","-r"+str(self.percentage),"-n"+str(self.nr_parfiles),f]) ])
-				blocksize = int(self.percentage*os.path.getsize(f)/4//100//self.nr_blocks*4)
+				blocksize,blockcount = getblocksizecount(f)
 				recreatedfiles.append([ f ,
 										self.runpar(["c",
-										"-s"+str(blocksize),
-										"-c"+str(self.nr_blocks),
-										"-B"+os.path.dirname(f),
+										"-s "+str(blocksize),
+										"-c "+str(blockcount),
+										#"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
@@ -460,13 +463,12 @@ class par2deep():
 				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
-				# recreatedfiles.append([ f , self.runpar(["c","-r"+str(self.percentage),"-n"+str(self.nr_parfiles),f]) ])
-				blocksize = int(self.percentage*os.path.getsize(f)/4//100//self.nr_blocks*4)
+				blocksize,blockcount = getblocksizecount(f)
 				recreatedfiles.append([ f ,
 										self.runpar(["c",
-										"-s"+str(blocksize),
-										"-c"+str(self.nr_blocks),
-										"-B"+os.path.dirname(f),
+										"-s "+str(blocksize),
+										"-c "+str(blockcount),
+										#"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
@@ -478,13 +480,12 @@ class par2deep():
 				pars = self.get_parf_glob(f)
 				for p in pars:
 					send2trash(p)
-				# recreatedfiles.append([ f , self.runpar(["c","-r"+str(self.percentage),"-n"+str(self.nr_parfiles),f]) ])
-				blocksize = int(self.percentage*os.path.getsize(f)/4//100//self.nr_blocks*4)
+				blocksize,blockcount = getblocksizecount(f)
 				recreatedfiles.append([ f ,
 										self.runpar(["c",
-										"-s"+str(blocksize),
-										"-c"+str(self.nr_blocks),
-										"-B"+os.path.dirname(f),
+										"-s "+str(blocksize),
+										"-c "+str(blockcount),
+										#"-B"+os.path.dirname(f),
 										parf,
 										f
 										])
