@@ -53,6 +53,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
+Note: 1.9.5 series was retracted from PyPI after user reports it not working correctly, and not being implemented for the cli. 1.9.4 is the latest version on PyPI and is the recommended version.
  * 2020-12-30: v1.9.5.1: Path bugfix.
  * 2020-12-30: v1.9.5: Option to store parity files in the 'parity' subdirectory.
  * 2020-04-26: v1.9.4: Include libpar2 for win64 and lin64 platforms, no external `par2` needed anymore.
