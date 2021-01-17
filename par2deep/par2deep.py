@@ -75,9 +75,24 @@ class par2deep():
 
 
 	def getblocksizecount(self,filename):
-		blocksize = ((os.path.getsize(filename)//2**15)//4+1)*4
-		blockcount = 2**15*self.percentage//100
-		return blocksize,blockcount
+		f_size = os.path.getsize(filename)
+		blocksize_min = f_size//2**15 # size can never be below this
+		blocksize_f = (f_size*self.percentage)//100
+		blockcount_max = 2**7-1 #some logic to keep blockcount and overhead for small files under control
+		if f_size < 1e6:
+			blockcount_max = 2**3-1
+		elif f_size < 4e6:
+			blockcount_max = 2**4-1
+		elif f_size < 20e6:
+			blockcount_max = 2**5-1
+		if blocksize_f > blocksize_min:
+			blockcount = min(blockcount_max,blocksize_f//blocksize_min)
+			blocksize = blocksize_f/blockcount
+		else:
+			blockcount = 1
+			blocksize = blocksize_min
+		blocksize = (blocksize//4+1)*4 #make multiple of 4
+		return int(blocksize),int(blockcount)
 
 
 	def runpar(self,command=""):
