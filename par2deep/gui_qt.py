@@ -122,10 +122,10 @@ class app_window(QMainWindow):
 		exex_fld.setToolTip("These extensions will be excluded from the analysis.")
 		exex_fld.textChanged.connect(lambda fldval : self.p2d.args.update({"extexcludes":fldval.split(',')}))
 
-		parpath_lb = QLabel("Path to alternative par2(.exe) executable:")
-		parpath_fld = QLineEdit(self.p2d.args["par_cmd"])
-		parpath_fld.setToolTip("Leave blank for built-in library or par2 in PATH.")
-		parpath_fld.textChanged.connect(lambda fldval : self.p2d.args.update({"par_cmd":fldval}))
+		# parpath_lb = QLabel("Path to alternative par2(.exe) executable:")
+		# parpath_fld = QLineEdit(self.p2d.args["par_cmd"])
+		# parpath_fld.setToolTip("Leave blank for built-in library or par2 in PATH.")
+		# parpath_fld.textChanged.connect(lambda fldval : self.p2d.args.update({"par_cmd":fldval}))
 
 		perc_sldr = BSlider("Percentage of protection",5,100,lambda fldval : self.p2d.args.update({"percentage":fldval}),self.p2d.args["percentage"])
 		perc_sldr.setToolTip("The maximum percentage of corrupted data you will be able to recover from. Higher is safer, but uses more disk space.")
@@ -140,8 +140,8 @@ class app_window(QMainWindow):
 		advset_layout.addWidget(ex_fld,0)
 		advset_layout.addWidget(exex_lb,0)
 		advset_layout.addWidget(exex_fld,0)
-		advset_layout.addWidget(parpath_lb,0)
-		advset_layout.addWidget(parpath_fld,0)
+		# advset_layout.addWidget(parpath_lb,0)
+		# advset_layout.addWidget(parpath_fld,0)
 		advset_layout.addWidget(perc_sldr,0)
 		advset.setLayout(advset_layout)
 

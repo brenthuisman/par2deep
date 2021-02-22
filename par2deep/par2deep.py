@@ -1,4 +1,4 @@
-import sys,pprint,enum,struct,ctypes,os,subprocess,re,glob,shutil
+import pprint,enum,ctypes,os,platform,subprocess,re,glob,shutil
 from configargparse import ArgParser
 try:
 	from Send2Trash import send2trash
@@ -57,9 +57,10 @@ class par2deep():
 		parser.add_argument("-ex", "--excludes", action="append", type=str, default=[], help="Optionally excludes directories ('root' is files in the root of -dir).")
 		parser.add_argument("-exex", "--extexcludes", action="append", type=str, default=[], help="Optionally excludes file extensions.")
 		parser.add_argument("-dir", "--directory", type=str, default=current_data_dir, help="Path to protect (default is current directory).")
-		parser.add_argument("-parsubdir", "--parity_subdirectory", action='store_true', help="Path to parity data store ($dir/parity).") #for now hardcode
+		# parser.add_argument("-parsubdir", "--parity_subdirectory", action='store_true', help="Path to parity data store ($dir/parity).") #for now hardcode
 		parser.add_argument("-pc", "--percentage", type=int, default=5, help="Set the parity percentage (default 5%%).")
-		parser.add_argument("-pcmd", "--par_cmd", type=str, default="", help="Set path to alternative par2 executable (default built-in library or \"par2\" in path).")
+		# parser.add_argument("-pcmd", "--par_cmd", type=str, default="", help="Set path to alternative par2 executable (default built-in library or \"par2\" in path).")
+		# we only use builtin gopar now
 
 		#lets get a nice dict of all o' that.
 		#FIXME: catch unrecognized arguments
@@ -67,6 +68,7 @@ class par2deep():
 
 		#constants
 		args["nr_parfiles"] = 1 #number of parity files
+		args["parity_subdirectory"] = False #Disable until solution found
 		args["parity_subdirectory_dir"] = "parity"
 
 		#set that shit
@@ -86,34 +88,31 @@ class par2deep():
 		elif f_size < 20e6:
 			blockcount_max = 2**5-1
 		if blocksize_f > blocksize_min:
-			blockcount = min(blockcount_max,blocksize_f//blocksize_min)
-			blocksize = blocksize_f/blockcount
+			try:
+				blockcount = min(blockcount_max,blocksize_f//blocksize_min)
+				blocksize = blocksize_f/blockcount
+			except ZeroDivisionError:
+				blockcount = 1
+				blocksize = blocksize_min
 		else:
 			blockcount = 1
-			blocksize = blocksize_min
+			blocksize = 4
 		blocksize = (blocksize//4+1)*4 #make multiple of 4
 		return int(blocksize),int(blockcount)
 
 
 	def runpar(self,command=""):
-		if self.libpar2_works:
-			def strlist2charpp(stringlist):
-				argc = len(stringlist)
-				Args = ctypes.c_char_p * (len(stringlist)+1)
-				argv = Args(*[ctypes.c_char_p(arg.encode("utf-8")) for arg in stringlist])
-				return argc,argv
-			return self.libpar2.par2cmdline(*strlist2charpp(command))
-		else:
-			cmdcommand = [self.par_cmd]
-			cmdcommand.extend(command)
-			devnull = open(os.devnull, 'wb')
-			try:
-				subprocess.check_call(cmdcommand,shell=self.shell)#,stdout=devnull,stderr=devnull)
-				return errorcodes.SUCCESS
-			except subprocess.CalledProcessError as e:
-				return e.returncode
-			except FileNotFoundError:
-				return errorcodes.NOTFOUND
+		print(command)
+		cmdcommand = [self.par_cmd]
+		cmdcommand.extend(command)
+		devnull = open(os.devnull, 'wb')
+		try:
+			subprocess.check_call(cmdcommand,shell=self.shell)#,stdout=devnull,stderr=devnull)
+			return errorcodes.SUCCESS
+		except subprocess.CalledProcessError as e:
+			return e.returncode
+		except FileNotFoundError:
+			return errorcodes.NOTFOUND
 
 
 	def init_par_cmd(self):
@@ -123,11 +122,11 @@ class par2deep():
 			setattr(self, k, v)
 
 		#we provide a win64 and lin64 library, use if on those platforms, otherwise fallback to par_cmd, and check if that is working
-		_void_ptr_size = struct.calcsize('P')
-		bit64 = _void_ptr_size * 8 == 64
-		windows = 'win32' in str(sys.platform).lower()
-		linux = 'linux' in str(sys.platform).lower()
-		macos = 'darwin' in str(sys.platform).lower()
+		bit64 = '64' in str(platform.machine()).lower()
+		arm = 'arm' in str(platform.machine()).lower()
+		windows = 'win32' in str(platform.system()).lower() or 'windows' in str(platform.system()).lower()
+		linux = 'linux' in str(platform.system()).lower()
+		macos = 'darwin' in str(platform.system()).lower()
 
 		self.shell=False
 		if windows:
@@ -135,70 +134,48 @@ class par2deep():
 
 		self.libpar2_works = False
 
-		if self.args["par_cmd"]:
-			if shutil.which(self.args["par_cmd"]):
-				self.par_cmd = self.args["par_cmd"]
-				return errorcodes.SUCCESS
-			else:
-				return errorcodes.NOTFOUND
-		else:
-			#pcmd not set by user, so lets see if we can use builtin libpar2 or par2
-			if bit64:
-				this_script_dir = os.path.dirname(os.path.abspath(__file__))
-				if windows:
-					try:
-						os.add_dll_directory(this_script_dir) #needed on python3.8 on win
-					except:
-						pass #not available or necesary on py37 and before
-					try:
-						self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.dll"))
-						self.libpar2_works = True
-					except:
-						pass
-				elif linux:
-					try:
-						self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.so"))
-						self.libpar2_works = True
-					except:
-						pass
-				elif macos:
-					pass #TODO, hope somebody can contribute
-				else: #otheros
-					pass
-			else: #bit32
+		#pcmd not set by user, so lets see if we can use builtin libpar2 or par2
+		if bit64:
+			this_script_dir = os.path.dirname(os.path.abspath(__file__))
+			if windows:
+				self.par_cmd = os.path.join(this_script_dir,'gopar_win.exe')
+			elif linux:
+				self.par_cmd = os.path.join(this_script_dir,'gopar_lin')
+			elif macos:
+				self.par_cmd = os.path.join(this_script_dir,'gopar_macos')
+			else: #otheros
 				pass
-			if self.libpar2_works == False:
-				#use par2 in path.
-				if windows:
-					self.par_cmd = 'par2.exe'
-				else:
-					self.par_cmd = 'par2'
-			# now test
-			if not self.libpar2_works and self.runpar() == errorcodes.NOTFOUND:
-				return errorcodes.NOTFOUND
-			else:
-				return errorcodes.SUCCESS
+		elif arm and linux: #assume pi
+			self.par_cmd = os.path.join(this_script_dir,'gopar_pi')
+		else: #bit32
+			pass
+
+		# now test
+		if self.runpar() == errorcodes.NOTFOUND:
+			return errorcodes.NOTFOUND
+		else:
+			return errorcodes.SUCCESS
 
 
 	def get_parf(self,fname,ext='.par2'):
-		# if self.parity_subdirectory:
-		# 	return os.path.join(self.parity_directory,os.path.relpath(fname,self.directory)+ext)
-		# else:
-		# 	return fname+ext
-		print("get_parf",os.path.relpath(fname,self.directory)+ext)
-		return os.path.relpath(fname,self.directory)+ext
+		return fname+ext
 
 
 	def get_f(self,parfname):
-		# if parfname.endswith('.par2'):
-		# 	return parfname[:-5].replace(self.parity_directory,self.directory)
-		# else:
-		# 	return parfname.replace(self.parity_directory,self.directory)
-		print("get_f",parfname)
 		if parfname.endswith('.par2'):
-			return parfname[:-5]#.replace(self.parity_directory,self.directory)
+			return parfname[:-5]
 		else:
-			return parfname#.replace(self.parity_directory,self.directory)
+			return parfname
+
+
+	def get_f_rel(self,parfname):
+		#used when creating parity files, which must be specified relative to the .par2 file.
+		parfname=os.path.basename(parfname)
+		print(parfname)
+		if parfname.endswith('.par2'):
+			return parfname[:-5]
+		else:
+			return parfname
 
 
 	def get_parf_glob(self,fname,ext='*.par2'):
@@ -206,7 +183,7 @@ class par2deep():
 
 
 	def set_state(self):
-		# self.directory = os.path.abspath(self.directory)
+		self.directory = os.path.abspath(self.directory)
 		self.parity_directory = self.directory
 		if self.parity_subdirectory:
 			self.parity_directory=os.path.join(self.directory,self.parity_subdirectory_dir)
@@ -225,7 +202,8 @@ class par2deep():
 			allfiles = [f for f in allfiles if not f.endswith(ext)]
 
 		backups_delete = []
-		backups_keep = [f for f in allfiles if f.endswith(tuple(['.'+str(i) for i in range(0,10)])) and f[:-2] in allfiles] #even though we wont create more backups than max_keep_backups, we'll check up to .9 for existence. we include .0, which is what par2deep created for verifiedfiles_repairable that was recreated anyway.
+		backups_keep = [f for f in allfiles if f.endswith(tuple(['.'+str(i) for i in range(0,10)])) and f[:-2] in allfiles]
+		#even though we wont create more backups than max_keep_backups, we'll check up to .9 for existence. we include .0, which is what par2deep created for verifiedfiles_repairable that was recreated anyway.
 		allfiles = [f for f in allfiles if f not in backups_keep] #update allfiles with the opposite.
 
 		parrables = [f for f in allfiles if not f.endswith((".par2",".par2deep_tmpfile"))]
@@ -314,6 +292,7 @@ class par2deep():
 		if len(create)>0:
 			#print('Creating ...')
 			for f in create:
+
 				yield f
 				parf = self.get_parf(f)
 				pars = self.get_parf_glob(f)
@@ -325,9 +304,8 @@ class par2deep():
 										self.runpar(["c",
 										"-s",str(blocksize),
 										"-c",str(blockcount),
-										#"-B"+os.path.dirname(f),
 										parf,
-										f
+										self.get_f_rel(f)
 										])
 									])
 			createdfiles_err=[ [i,j] for i,j in createdfiles
@@ -341,14 +319,13 @@ class par2deep():
 		if not self.noverify and not self.overwrite and len(verify)>0:
 			#print('Verifying ...')
 			for f in verify:
+
 				yield f
 				parf = self.get_parf(f)
 				print(self.directory,parf,f)
 				verifiedfiles.append([ f ,
 										self.runpar(["v",
-										#"-B"+os.path.dirname(f),
 										parf,
-										f
 										])
 									])
 			verifiedfiles_err=[ [i,j] for i,j in verifiedfiles
@@ -364,6 +341,7 @@ class par2deep():
 		if len(orphans_delete)>0:
 			#print('Removing ...')
 			for f in orphans_delete:
+
 				yield f
 				if os.path.isfile(f): # so send2trash always succeeds and returns None
 					send2trash(f)
@@ -376,6 +354,7 @@ class par2deep():
 		if len(backups_delete)>0:
 			#print('Removing ...')
 			for f in backups_delete:
+
 				yield f
 				if os.path.isfile(f): # so send2trash always succeeds and returns None
 					send2trash(f)
@@ -406,12 +385,12 @@ class par2deep():
 		recreatedfiles=[]
 		if self.len_verified_actions>0:
 			for f,retcode in self.verifiedfiles_repairable:
+
 				yield f
 				parf = self.get_parf(f)
 				retval = self.runpar(["r",
-										#"-B"+os.path.dirname(f),
 										parf,
-										f])
+										])
 				if retval == errorcodes.SUCCESS:
 					if self.clean_backup:
 						#backups should just have been cleaned in the execute phase and therefore a .1 been created.
@@ -421,6 +400,7 @@ class par2deep():
 				repairedfiles.append([ f , retval ])
 
 			for f,retcode in self.verifiedfiles_err:
+
 				yield f
 				parf = self.get_parf(f)
 				pars = self.get_parf_glob(f)
@@ -431,9 +411,8 @@ class par2deep():
 										self.runpar(["c",
 										"-s",str(blocksize),
 										"-c",str(blockcount),
-										#"-B"+os.path.dirname(f),
 										parf,
-										f
+										self.get_f_rel(f)
 										])
 									])
 
@@ -453,6 +432,7 @@ class par2deep():
 
 		if self.len_verified_actions>0:
 			for f,retcode in self.verifiedfiles_repairable:
+
 				yield f
 				parf = self.get_parf(f)
 				if not self.clean_backup:
@@ -461,9 +441,8 @@ class par2deep():
 					shutil.copyfile(f,ftmp)
 					# now that we have a backup of the repairable, repair to obtain the actual backup we want.
 					retval = self.runpar(["r",
-										#"-B"+os.path.dirname(f),
 										parf,
-										f])
+										])
 					if retval == errorcodes.SUCCESS:
 						# f is now the file we actually want to backup.
 						shutil.copyfile(f,f+".0") # will overwrite acc. to docs
@@ -490,13 +469,13 @@ class par2deep():
 										self.runpar(["c",
 										"-s",str(blocksize),
 										"-c",str(blockcount),
-										#"-B"+os.path.dirname(f),
 										parf,
-										f
+										self.get_f_rel(f)
 										])
 									])
 
 			for f,retcode in self.verifiedfiles_err:
+
 				yield f
 				parf = self.get_parf(f)
 				pars = self.get_parf_glob(f)
@@ -507,9 +486,8 @@ class par2deep():
 										self.runpar(["c",
 										"-s",str(blocksize),
 										"-c",str(blockcount),
-										#"-B"+os.path.dirname(f),
 										parf,
-										f
+										self.get_f_rel(f)
 										])
 									])
 
