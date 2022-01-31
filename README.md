@@ -53,7 +53,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
- * 2020-04-26: v1.9.4.1: Moved kinda-broken (no UTF8 filename support) `gopar` changes to gopar branch, release last commit as new version as it fixes some things.
+ * 2022-01-31: v1.9.4.1: Moved kinda-broken (no UTF8 filename support) `gopar` changes to gopar branch, release last commit as new version as it fixes some things.
  * 2020-04-26: v1.9.4: Include libpar2 for win64 and lin64 platforms, no external `par2` needed anymore.
  * 2020-04-20: recreate verified_repairable creates backup. backups are shows upon init. orphans are shown upon init.
  * 2020-04-16: v1.9.3: Packaging still is a pain!
