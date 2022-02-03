@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from setuptools import setup
 
-VERSION = '1.9.4.1'
+VERSION = '1.9.4.2'
 
 def main():
     setup(name='par2deep',
@@ -27,11 +27,11 @@ def main():
           license='LGPL',
           include_package_data=True,
           zip_safe=False,
-          install_requires=['tqdm','configargparse','Send2Trash','PyQt5'],
+          install_requires=['tqdm','configargparse','send2trash','PyQt5'],
           packages=['par2deep'],
           package_data={'': ['libpar2.so','libpar2.dll']},
           entry_points={
-              "console_scripts": ['par2deep = par2deep.gui_qt:main', 'par2deep-tk = par2deep.gui_tk:main', 'par2deep-cli = par2deep.cli:main'],
+              "console_scripts": ['par2deep = par2deep.gui_qt:main', 'par2deep-cli = par2deep.cli:main'],
           }
           )
 

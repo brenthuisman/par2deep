@@ -19,17 +19,21 @@ If you have Python installed, you can use pip! Make sure to update pip before in
     $ pip3 install -U pip
     $ pip3 install par2deep --user
 
-If you use Windows, and do not have Python installed, you can grab an installer [here](https://github.com/brenthuisman/par2deep/releases). These msi packages are generated created with the `cx_Freeze` package using the `setup_cx.py` script:
-
-    $ python3 setup_cx.py bdist_msi
-
 Alternatively, clone/download this repo and install:
 
-    $ python3 setup.py install --user
+    $ pip3 installl ./par2deep
 
 Or run directly:
 
     $ python3 par2deep
+
+### Windows
+
+If you use Windows, and do not have Python installed, you can grab an installer [here](https://github.com/brenthuisman/par2deep/releases). These msi packages are generated created with the `cx_Freeze` package using the `setup_cx.py` script:
+
+    $ python3 setup_cx.py bdist_msi
+
+Configuration used to produce the release `.msi`: Python 3.8.10 64bit (for Windows 7 compatibility), cx_Freeze 6.4.
 
 ## Usage
 
@@ -53,6 +57,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
+ * 2022-02-03: v1.9.4.2: Fixed `cli.py`, fixed some package name casing, `pardeep` now always starts Qt GUI, removed `gui_tk.py`.
  * 2022-01-31: v1.9.4.1: Moved kinda-broken (no UTF8 filename support) `gopar` changes to gopar branch, release last commit as new version as it fixes some things.
  * 2020-04-26: v1.9.4: Include libpar2 for win64 and lin64 platforms, no external `par2` needed anymore.
  * 2020-04-20: recreate verified_repairable creates backup. backups are shows upon init. orphans are shown upon init.

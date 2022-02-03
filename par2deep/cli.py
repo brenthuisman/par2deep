@@ -31,15 +31,12 @@ def disp10(lst,q=False):
 def main():
 	p2d = par2deep()
 
-	try:
-		print("Using",p2d.par_cmd,"...")
-	except:
-		pass
-	print("Looking for files in",p2d.directory,"...")
-	
 	if p2d.check_state() == 200:
 		print("The par2 command you specified is invalid.")
 		return 1
+	else:
+		print("Using",p2d.par_cmd,"...")
+		print("Looking for files in",p2d.directory,"...")
 
 	print("==========================================================")
 	print('Will create',len(p2d.create),'new par2 files.')
@@ -52,8 +49,6 @@ def main():
 	disp10(p2d.orphans_delete,p2d.quiet)
 	print('Will remove',len(p2d.backups_delete),'backup files.')
 	disp10(p2d.backups_delete,p2d.quiet)
-	print('Will remove',len(p2d.par2errcopies),'old repair files.')
-	disp10(p2d.par2errcopies,p2d.quiet)
 
 	if not p2d.quiet and p2d.len_all_actions>0 and not ask_yn("Perform actions?", default=None):
 		print('Exiting...')

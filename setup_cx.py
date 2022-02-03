@@ -1,7 +1,7 @@
 from cx_Freeze import setup, Executable
 import sys,os.path,glob
 
-VERSION = '1.9.4.1'
+VERSION = '1.9.4.2'
 NAME = 'par2deep'
 DESCRIPTION = "Produce, verify and repair par2 files recursively."
 
@@ -9,7 +9,7 @@ exe_options = {
 	'include_files':[
 		NAME+'.ico',
 		] + glob.glob("par2deep/*.py") + glob.glob("par2deep/libpar2.*"),
-	'packages': ["configargparse","pyqt5", "Send2Trash", "tqdm"], #adding tqdm causes every installed pip package to be included...
+	'packages': ["configargparse","PyQt5", "send2trash", "tqdm"], #adding tqdm causes every installed pip package to be included...
 }
 
 shortcut_table = [
