@@ -64,7 +64,6 @@ class par2deep():
 			cmdcommand = [self.par_cmd]
 		cmdcommand.extend(command)
 		devnull = open(os.devnull, 'wb')
-		print(cmdcommand)
 		try:
 			subprocess.check_call(cmdcommand,shell=self.shell,stdout=devnull,stderr=devnull)
 			return 0
