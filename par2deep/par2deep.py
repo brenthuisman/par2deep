@@ -1,4 +1,4 @@
-import sys,struct,ctypes,os,subprocess,re,glob,shutil
+import platform,struct,ctypes,os,subprocess,re,glob,shutil
 from configargparse import ArgParser
 try:
 	from Send2Trash import send2trash
@@ -58,24 +58,20 @@ class par2deep():
 
 
 	def runpar(self,command=""):
-		if self.libpar2_works:
-			def strlist2charpp(stringlist):
-				argc = len(stringlist)
-				Args = ctypes.c_char_p * (len(stringlist)+1)
-				argv = Args(*[ctypes.c_char_p(arg.encode("utf-8")) for arg in stringlist])
-				return argc,argv
-			return self.libpar2.par2cmdline(*strlist2charpp(command))
+		if self.includedpar2_works:
+			cmdcommand = [self.includedpar2]
 		else:
 			cmdcommand = [self.par_cmd]
-			cmdcommand.extend(command)
-			devnull = open(os.devnull, 'wb')
-			try:
-				subprocess.check_call(cmdcommand,shell=self.shell,stdout=devnull,stderr=devnull)
-				return 0
-			except subprocess.CalledProcessError as e:
-				return e.returncode
-			except FileNotFoundError:
-				return 200
+		cmdcommand.extend(command)
+		devnull = open(os.devnull, 'wb')
+		print(cmdcommand)
+		try:
+			subprocess.check_call(cmdcommand,shell=self.shell,stdout=devnull,stderr=devnull)
+			return 0
+		except subprocess.CalledProcessError as e:
+			return e.returncode
+		except FileNotFoundError:
+			return 200
 
 
 	def check_state(self):
@@ -83,18 +79,19 @@ class par2deep():
 			setattr(self, k, v)
 		self.percentage = str(self.args["percentage"])
 		
-		#we provide a win64 and lin64 library, use if on those platforms, otherwise fallback to par_cmd, and check if that is working
+		# use builtins if on supported platforms, otherwise fallback to par_cmd, and check if that is working
 		_void_ptr_size = struct.calcsize('P')
 		bit64 = _void_ptr_size * 8 == 64
-		windows = 'win32' in str(sys.platform).lower()
-		linux = 'linux' in str(sys.platform).lower()
-		macos = 'darwin' in str(sys.platform).lower()
+		windows = 'windows' in str(platform.system()).lower()
+		linux = 'linux' in str(platform.system()).lower()
+		macos = 'darwin' in str(platform.system()).lower()
+		arm = 'arm' in str(platform.processor()).lower()
 		
 		self.shell=False
 		if windows:
 			self.shell=True #shell true because otherwise pythonw.exe pops up a window for every par2 action!
 		
-		self.libpar2_works = False
+		self.includedpar2_works = False
 		if os.path.isfile(self.args["par_cmd"]):
 			self.par_cmd = self.args["par_cmd"]
 		else:
@@ -106,31 +103,44 @@ class par2deep():
 						os.add_dll_directory(this_script_dir) #needed on python3.8 on win
 					except:
 						pass #not available or necesary on py37 and before
-					try:
-						self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.dll"))
-						self.libpar2_works = True
-					except:
-						pass
+					ppath = os.path.join(this_script_dir,"par2.exe")
+					if os.path.exists(ppath):
+						self.includedpar2 = ppath
+						self.includedpar2_works = True
 				elif linux:
-					try:
-						self.libpar2 = ctypes.CDLL(os.path.join(this_script_dir,"libpar2.so"))
-						self.libpar2_works = True
-					except:
-						pass
+					if arm:
+						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-linux-arm64")
+						if os.path.exists(ppath):
+							self.includedpar2 = ppath
+							self.includedpar2_works = True
+					else:
+						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-linux-amd64")
+						if os.path.exists(ppath):
+							self.includedpar2 = ppath
+							self.includedpar2_works = True
 				elif macos:
-					pass #TODO, hope somebody can contribute
+					if arm:
+						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-macos-arm64")
+						if os.path.exists(ppath):
+							self.includedpar2 = ppath
+							self.includedpar2_works = True
+					else:
+						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-macos-x64")
+						if os.path.exists(ppath):
+							self.includedpar2 = ppath
+							self.includedpar2_works = True
 				else: #otheros
 					pass
 			else: #bit32
 				pass
-			if self.libpar2_works == False:
+			if self.includedpar2_works == False:
 				#use par2 in path.
 				if windows:
 					self.par_cmd = 'par2.exe'
 				else:
 					self.par_cmd = 'par2'
 		# now test
-		if not self.libpar2_works and self.runpar() == 200:
+		if not self.includedpar2_works and self.runpar() == 200:
 			return 200
 			#if 200, then par2 doesnt exist.
 

@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from setuptools import setup
 
-VERSION = '1.9.4.2'
+VERSION = '1.10'
 
 def main():
     setup(name='par2deep',
@@ -29,7 +29,7 @@ def main():
           zip_safe=False,
           install_requires=['tqdm','configargparse','send2trash','PyQt5'],
           packages=['par2deep'],
-          package_data={'': ['libpar2.so','libpar2.dll']},
+          package_data={'': ['par2.exe','par2cmdline-turbo-v1.1.1-linux-amd64','par2cmdline-turbo-v1.1.1-linux-arm64','par2cmdline-turbo-v1.1.1-macos-x64','par2cmdline-turbo-v1.1.1-macos-arm64']},
           entry_points={
               "console_scripts": ['par2deep = par2deep.gui_qt:main', 'par2deep-cli = par2deep.cli:main'],
           }

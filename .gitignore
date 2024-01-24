@@ -1,6 +1,3 @@
-*
-!.gitignore
-!README.md
-!*.py
-!LICENSE
-!*/
+build/
+par2deep.egg-info/
+*__pycache__
