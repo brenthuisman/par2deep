@@ -1,4 +1,5 @@
-import sys,os
+import sys
+from pathlib import Path
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon,QStandardItemModel
 from PyQt5.QtCore import QSettings,Qt
@@ -20,7 +21,7 @@ class app_window(QMainWindow):
 		self.guisettings = QSettings("BrentH", "par2deep")
 		
 		geometry = self.guisettings.value("geometry", self.saveGeometry())
-		lastdir = self.guisettings.value("lastdir", os.path.expanduser("~"))
+		lastdir = self.guisettings.value("lastdir", Path.home())
 		
 		self.restoreGeometry(geometry)
 		
@@ -74,10 +75,10 @@ class app_window(QMainWindow):
 		pickdir_btn.clicked.connect(pickdir)
 		
 		def textchanged(text):
-			if os.path.isdir(text):
+			if Path(text).exists():
 				self.new_window(self.topbar_frame(0), self.start_options_frame(text), self.start_actions_frame())
 		
-		pickdir_txt = QLineEdit(self.p2d.args["directory"])
+		pickdir_txt = QLineEdit(self.p2d.get_dir())
 		pickdir_txt.textChanged.connect(textchanged)
 		
 		basicset_layout = QHBoxLayout()
@@ -285,7 +286,7 @@ class app_window(QMainWindow):
 		
 		def upd(cnt,currentfile):
 			self.pb.setValue(cnt)
-			self.pb_currentfile.setText("Processing "+os.path.basename(currentfile))
+			self.pb_currentfile.setText("Processing "+Path(currentfile).name)
 		
 		self.p2d_t.progress.connect(upd)
 		self.p2d_t.retval.connect(run)
@@ -316,7 +317,7 @@ class app_window(QMainWindow):
 		
 		def upd(cnt,currentfile):
 			self.pb.setValue(cnt)
-			self.pb_currentfile.setText("Processing "+os.path.basename(currentfile))
+			self.pb_currentfile.setText("Processing "+Path(currentfile).name)
 		
 		self.p2d_t.progress.connect(upd)
 		self.p2d_t.retval.connect(run)
@@ -374,7 +375,7 @@ class app_window(QMainWindow):
 		
 		def upd(cnt,currentfile):
 			self.pb.setValue(cnt)
-			self.pb_currentfile.setText("Processing "+os.path.basename(currentfile))
+			self.pb_currentfile.setText("Processing "+Path(currentfile).name)
 		
 		self.p2d_t.progress.connect(upd)
 		self.p2d_t.retval.connect(run)

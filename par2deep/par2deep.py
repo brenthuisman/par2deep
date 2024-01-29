@@ -1,4 +1,5 @@
-import platform,struct,ctypes,os,subprocess,re,glob,shutil
+import platform,struct,ctypes,subprocess,re,glob,shutil,os
+from pathlib import Path
 from configargparse import ArgParser
 try:
 	from Send2Trash import send2trash
@@ -27,12 +28,12 @@ fifth, final report.
 class par2deep():
 	def __init__(self,chosen_dir=None):
 		#CMD arguments and configfile
-		if chosen_dir == None or not os.path.isdir(chosen_dir):
-			current_data_dir = os.getcwd()
+		if chosen_dir == None or not Path(chosen_dir).is_dir():
+			current_data_dir = Path.cwd()
 			parser = ArgParser(default_config_files=['par2deep.ini', '~/.par2deep'])
 		else:
-			current_data_dir = os.path.abspath(chosen_dir)
-			parser = ArgParser(default_config_files=[os.path.join(current_data_dir,'par2deep.ini'), '~/.par2deep'])
+			current_data_dir = Path(chosen_dir).absolute()
+			parser = ArgParser(default_config_files=[current_data_dir/'par2deep.ini', Path.cwd()/'.par2deep'])
 
 		parser.add_argument("-q", "--quiet", action='store_true', help="Don't asks questions, go with all defaults, including repairing and deleting files (default off).")
 		parser.add_argument("-over", "--overwrite", action='store_true', help="Overwrite existing par2 files (default off).")
@@ -55,6 +56,10 @@ class par2deep():
 		#set that shit
 		self.args = args
 		return
+
+
+	def get_dir(self):
+		return str(self.args['directory'])
 
 
 	def runpar(self,command=""):
@@ -91,41 +96,37 @@ class par2deep():
 			self.shell=True #shell true because otherwise pythonw.exe pops up a window for every par2 action!
 		
 		self.includedpar2_works = False
-		if os.path.isfile(self.args["par_cmd"]):
-			self.par_cmd = self.args["par_cmd"]
+		if Path(self.args["par_cmd"]).is_file():
+			self.par_cmd = Path(self.args["par_cmd"]).absolute()
 		else:
 			#pcmd not set by user, so lets see if we can use libpar2
 			if bit64:
-				this_script_dir = os.path.dirname(os.path.abspath(__file__))
+				this_script_dir = Path(__file__).absolute().parent
 				if windows:
-					try:
-						os.add_dll_directory(this_script_dir) #needed on python3.8 on win
-					except:
-						pass #not available or necesary on py37 and before
-					ppath = os.path.join(this_script_dir,"par2.exe")
-					if os.path.exists(ppath):
+					ppath = this_script_dir/"par2.exe"
+					if ppath.exists():
 						self.includedpar2 = ppath
 						self.includedpar2_works = True
 				elif linux:
 					if arm:
-						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-linux-arm64")
-						if os.path.exists(ppath):
+						ppath = this_script_dir/"par2cmdline-turbo-v1.1.1-linux-arm64"
+						if ppath.exists():
 							self.includedpar2 = ppath
 							self.includedpar2_works = True
 					else:
-						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-linux-amd64")
-						if os.path.exists(ppath):
+						ppath = this_script_dir/"par2cmdline-turbo-v1.1.1-linux-amd64"
+						if ppath.exists():
 							self.includedpar2 = ppath
 							self.includedpar2_works = True
 				elif macos:
 					if arm:
-						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-macos-arm64")
-						if os.path.exists(ppath):
+						ppath = this_script_dir/"par2cmdline-turbo-v1.1.1-macos-arm64"
+						if ppath.exists():
 							self.includedpar2 = ppath
 							self.includedpar2_works = True
 					else:
-						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-macos-x64")
-						if os.path.exists(ppath):
+						ppath = this_script_dir/"par2cmdline-turbo-v1.1.1-macos-x64"
+						if ppath.exists():
 							self.includedpar2 = ppath
 							self.includedpar2_works = True
 				else: #otheros
@@ -143,25 +144,25 @@ class par2deep():
 			return 200
 			#if 200, then par2 doesnt exist.
 
-		allfiles = [f for f in glob.glob(os.path.join(self.directory,"**","*"), recursive=True) if os.path.isfile(f)] #not sure why required, but glob may introduce paths...
+		allfiles = list(self.directory.glob("**/*"))
 
 		if 'root' in self.excludes:
-			allfiles = [f for f in allfiles if os.path.dirname(f) != self.directory]
+			allfiles = [f for f in allfiles if f.parent != self.directory]
 			self.excludes.remove('root')
 		for excl in self.excludes:
-			allfiles = [f for f in allfiles if not f.startswith(os.path.join(self.directory,excl))]
+			allfiles = [f for f in allfiles if not self.directory/excl in f.parents]
 		for ext in self.extexcludes:
-			allfiles = [f for f in allfiles if not f.endswith(ext)]
+			allfiles = [f for f in allfiles if not ext in f.suffix]
 
 		backups_delete = []
-		backups_keep = [f for f in allfiles if f.endswith(tuple(['.'+str(i) for i in range(0,10)])) and f[:-2] in allfiles] #even though we wont create more backups than max_keep_backups, we'll check up to .9 for existence. we include .0, which is what par2deep created for verifiedfiles_repairable that was recreated anyway.
+		backups_keep = [f for f in allfiles if f.suffix in ['.'+str(i) for i in range(0,10)] and f.withname(f.stem) in allfiles] #even though we wont create more backups than max_keep_backups, we'll check up to .9 for existence. we include .0, which is what par2deep created for verifiedfiles_repairable that was recreated anyway.
 		allfiles = [f for f in allfiles if f not in backups_keep] #update allfiles with the opposite.
 
-		parrables = [f for f in allfiles if not f.endswith((".par2",".par2deep_tmpfile"))]
+		parrables = [f for f in allfiles if not f.suffix in [".par2",".par2deep_tmpfile"]]
 
 		pattern = '.+vol[0-9]+\+[0-9]+\.par2'
-		par2corrfiles = [f for f in allfiles if re.search(pattern, f)]
-		par2files = [f for f in allfiles if f.endswith(".par2") and not re.search(pattern, f)]
+		par2corrfiles = [f for f in allfiles if re.search(pattern, f.name)]
+		par2files = [f for f in allfiles if f.suffix == ".par2" and not re.search(pattern, f.name)]
 
 		if self.clean_backup:
 			backups_delete = [i for i in backups_keep]
@@ -173,7 +174,7 @@ class par2deep():
 		#print("Checking files for parrability ...")
 		for f in parrables:
 			# check if both or one of the par files is missing
-			ispar = os.path.isfile(f+".par2")
+			ispar = (f+".par2").exists()
 			isvolpar = len(glob.glob(glob.escape(f)+".vol*.par2")) > 0
 			if self.overwrite:
 				create.append(f)
