@@ -143,7 +143,7 @@ class par2deep():
 			return 200
 			#if 200, then par2 doesnt exist.
 
-		allfiles = [f for f in glob.glob(os.path.join(self.directory,"**","*"), recursive=True) if os.path.isfile(f)] #not sure why required, but glob may introduce paths...
+		allfiles = [f for f in glob.glob(os.path.join(glob.escape(self.directory),"**","*"), recursive=True) if os.path.isfile(f)] #not sure why required, but glob may introduce paths...
 
 		if 'root' in self.excludes:
 			allfiles = [f for f in allfiles if os.path.dirname(f) != self.directory]
