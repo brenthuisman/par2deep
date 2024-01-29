@@ -98,10 +98,6 @@ class par2deep():
 			if bit64:
 				this_script_dir = os.path.dirname(os.path.abspath(__file__))
 				if windows:
-					try:
-						os.add_dll_directory(this_script_dir) #needed on python3.8 on win
-					except:
-						pass #not available or necesary on py37 and before
 					ppath = os.path.join(this_script_dir,"par2.exe")
 					if os.path.exists(ppath):
 						self.includedpar2 = ppath
