@@ -1,7 +1,7 @@
 from cx_Freeze import setup, Executable
 import sys,os.path,glob
 
-VERSION = '1.10'
+VERSION = '1.10.1'
 NAME = 'par2deep'
 DESCRIPTION = "Produce, verify and repair par2 files recursively."
 
