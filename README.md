@@ -57,6 +57,7 @@ Example `par2deep.ini`:
 
 ### Changelog
 
+* 2024-07-23: v1.10.2: Moved `par2cmdline-turbo` to its own package.
 * 2024-01-29: v1.10.1: Escape user provided directory properly.
 * 2024-01-24: v1.10: Replaced libpar2 builtin with par2cmdline-turbo v1.1.1. Provide builtin par2cmdline-turbo for Win x86_64, Linux x84_64 and ARM64, Macos x86_64 and ARM64. This should fix issues with filename encodings, filesize limits.
 * 2022-02-03: v1.9.4.2: Fixed `cli.py`, fixed some package name casing, `pardeep` now always starts Qt GUI, removed `gui_tk.py`.
