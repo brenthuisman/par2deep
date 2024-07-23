@@ -4,7 +4,7 @@ Analogous to the various *deep commands (md5deep, hashdeep...) this tool serves 
 
 This tool will generate one parity file (plus a file for the recovery blocks) per file that you protect. This makes it simple to move files if you change your mind on how your file tree must be organized. Just move the `par2` files along.
 
-For your convenience, par2deep comes with [par2cmdline-turbo](https://github.com/animetosho/par2cmdline-turbo). Those binaries are provided under their [own license](https://github.com/animetosho/par2cmdline-turbo/blob/turbo/COPYING).
+For your convenience, par2deep installs the [par2cmdline-turbo](https://github.com/animetosho/par2cmdline-turbo) [Python package](https://github.com/brenthuisman/par2cmdline-turbo.py).
 
 ## Motivation
 
