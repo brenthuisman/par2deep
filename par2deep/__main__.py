@@ -1,4 +1,3 @@
-import os,gui_qt,cli
+import gui_tk
 
-if __name__ == '__main__':
-	gui_qt.main()
+gui_tk.main()

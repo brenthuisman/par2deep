@@ -1,0 +1,47 @@
+[project]
+name = "par2deep"
+version = "1.11.0"
+readme = "README.md"
+license = {file = "LICENSE"}
+description = "Produce, verify and repair par2 files recursively."
+requires-python = ">=3.8"
+keywords = ["par2","file","integrity"]
+authors = [
+    {name = "Brent Huisman"},
+    {email = "brent@huisman.pl"}
+]
+maintainers = [
+    {name = "Brent Huisman", email = "brent@huisman.pl"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Environment :: Console",
+    "Environment :: MacOS X",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: X11 Applications",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Topic :: Utilities",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "darkdetect",
+    "tqdm",
+    "configargparse",
+    "send2trash",
+    "par2cmdline-turbo"
+]
+
+[project.urls]
+homepage = "https://github.com/brenthuisman/par2deep"
+documentation = "https://github.com/brenthuisman/par2deep"
+repository = "https://github.com/brenthuisman/par2deep"
+changelog = "https://github.com/brenthuisman/par2deep/blob/master/README.md"
+
+[project.scripts]
+par2deep = "par2deep:main"
+par2deep-cli = "par2deep.cli:main"
