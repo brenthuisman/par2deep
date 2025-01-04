@@ -14,26 +14,17 @@ I use `par2deep` to secure my photos and music across drives, machines and opera
 
 ## Install
 
-If you have Python installed, you can use pip! Make sure to update pip before installation (PyQt5 won't install without a recent pip).
+If you have Python installed, you can use pip!
 
-    $ pip install -U pip
     $ pip install par2deep
+	
+Alternatively, the `par2deep.pyzw` file can be executed directly (by doubleclicking) on Windows if you have Python installed.
 
-Alternatively, clone/download this repo and install:
+## shiv
 
-    $ pip install ./par2deep
+You can use `shiv` to build a `.pyzw` file that contains all dependencies (including `par2cmdline-turbo`) and can be executed directly by any compatible Python version (3.8 or later). Here is how I built the (Windows) `.pyzw`):
 
-Or run directly:
-
-    $ python par2deep
-
-### Windows
-
-If you use Windows, and do not have Python installed, you can grab an installer [here](https://github.com/brenthuisman/par2deep/releases). These msi packages are generated created with the `cx_Freeze` package using the `setup_cx.py` script:
-
-    $ python3 setup_cx.py bdist_msi
-
-Configuration used to produce the release `.msi`: Python 3.8.10 64bit (for Windows 7 compatibility), cx_Freeze 6.4.
+	$ shiv -o par2deep.pyzw -e par2deep:main .\par2deep\
 
 ## Usage
 
@@ -49,14 +40,16 @@ Example `par2deep.ini`:
 
 ## Dependencies
 
+* par2cmdline-turbo
 * tqdm
 * configargparse
 * Send2Trash
-* PyQt5
+* darkdetect
 * On exotic platforms: provide your own `par2`
 
 ### Changelog
 
+* 2025-01-04: v1.11.0: Switch GUI back to (themed) TKinter. Fix up par2-command logic, make compatible with `shiv`.
 * 2024-07-23: v1.10.2: Moved `par2cmdline-turbo` to its own package.
 * 2024-01-29: v1.10.1: Escape user provided directory properly.
 * 2024-01-24: v1.10: Replaced libpar2 builtin with par2cmdline-turbo v1.1.1. Provide builtin par2cmdline-turbo for Win x86_64, Linux x84_64 and ARM64, Macos x86_64 and ARM64. This should fix issues with filename encodings, filesize limits.
