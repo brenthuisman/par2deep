@@ -1,4 +1,4 @@
-import platform,struct,ctypes,os,subprocess,re,glob,shutil
+import platform,os,subprocess,re,glob,shutil
 from configargparse import ArgParser
 try:
 	from Send2Trash import send2trash
@@ -58,10 +58,10 @@ class par2deep():
 
 
 	def runpar(self,command=""):
-		if self.includedpar2_works:
-			cmdcommand = [self.includedpar2]
-		else:
+		if self.par_cmd_works:
 			cmdcommand = [self.par_cmd]
+		else:
+			cmdcommand = [self.par_cmd_fallback]
 		cmdcommand.extend(command)
 		devnull = open(os.devnull, 'wb')
 		try:
@@ -78,64 +78,22 @@ class par2deep():
 			setattr(self, k, v)
 		self.percentage = str(self.args["percentage"])
 		
-		# use builtins if on supported platforms, otherwise fallback to par_cmd, and check if that is working
-		_void_ptr_size = struct.calcsize('P')
-		bit64 = _void_ptr_size * 8 == 64
-		windows = 'windows' in str(platform.system()).lower()
-		linux = 'linux' in str(platform.system()).lower()
-		macos = 'darwin' in str(platform.system()).lower()
-		arm = 'arm' in str(platform.processor()).lower()
-		
 		self.shell=False
+		windows = 'windows' in str(platform.system()).lower()
 		if windows:
 			self.shell=True #shell true because otherwise pythonw.exe pops up a window for every par2 action!
 		
-		self.includedpar2_works = False
+		self.par_cmd_works = False
 		if os.path.isfile(self.args["par_cmd"]):
 			self.par_cmd = self.args["par_cmd"]
+			self.par_cmd_works = True
 		else:
-			#pcmd not set by user, so lets see if we can use libpar2
-			if bit64:
-				this_script_dir = os.path.dirname(os.path.abspath(__file__))
-				if windows:
-					ppath = os.path.join(this_script_dir,"par2.exe")
-					if os.path.exists(ppath):
-						self.includedpar2 = ppath
-						self.includedpar2_works = True
-				elif linux:
-					if arm:
-						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-linux-arm64")
-						if os.path.exists(ppath):
-							self.includedpar2 = ppath
-							self.includedpar2_works = True
-					else:
-						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-linux-amd64")
-						if os.path.exists(ppath):
-							self.includedpar2 = ppath
-							self.includedpar2_works = True
-				elif macos:
-					if arm:
-						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-macos-arm64")
-						if os.path.exists(ppath):
-							self.includedpar2 = ppath
-							self.includedpar2_works = True
-					else:
-						ppath = os.path.join(this_script_dir,"par2cmdline-turbo-v1.1.1-macos-x64")
-						if os.path.exists(ppath):
-							self.includedpar2 = ppath
-							self.includedpar2_works = True
-				else: #otheros
-					pass
-			else: #bit32
-				pass
-			if self.includedpar2_works == False:
-				#use par2 in path.
-				if windows:
-					self.par_cmd = 'par2.exe'
-				else:
-					self.par_cmd = 'par2'
-		# now test
-		if not self.includedpar2_works and self.runpar() == 200:
+			import par2
+			self.par_cmd_fallback = os.path.join(par2.__path__[0],"binaries","par2")
+			if windows:
+				self.par_cmd_fallback += ".exe"
+
+		if self.runpar() == 200:
 			return 200
 			#if 200, then par2 doesnt exist.
 
