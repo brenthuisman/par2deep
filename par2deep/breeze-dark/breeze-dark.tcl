@@ -4,7 +4,7 @@
 #
 #  Copyright (c) 2020 Bartek Jasicki
 
-package require Tk 8.6.0
+package require Tk 8.5.9
 
 namespace eval ttk::theme::breeze-dark {
 
@@ -29,9 +29,9 @@ namespace eval ttk::theme::breeze-dark {
 
     proc LoadImages {imgdir} {
         variable I
-        foreach file [glob -directory $imgdir *.png] {
+        foreach file [glob -directory $imgdir *.gif] {
             set img [file tail [file rootname $file]]
-            set I($img) [image create photo -file $file -format png]
+            set I($img) [image create photo -file $file -format gif]
         }
     }
 
