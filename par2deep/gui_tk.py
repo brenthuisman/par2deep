@@ -532,10 +532,10 @@ def main():
 	root = Tk()
 
 	if darkdetect.isDark():
-		root.tk.call('source', os.path.join(os.path.dirname(__file__),"breeze-dark/breeze-dark.tcl"))
+		root.tk.call('source', os.path.join(os.path.dirname(__file__),"breeze-dark","breeze-dark.tcl"))
 		Style().theme_use('breeze-dark')
 	else:
-		root.tk.call('source', os.path.join(os.path.dirname(__file__),"breeze-dark/breeze.tcl"))
+		root.tk.call('source', os.path.join(os.path.dirname(__file__),"breeze","breeze.tcl"))
 		Style().theme_use('breeze')
 	
 	app = app_frame(root)
